@@ -1,0 +1,23 @@
+---
+// the side navigation: the current section's pages. below 72rem, where the top bar
+// has no room for the sections, they lead the list, as in the design system's menu.
+import Default from '@astrojs/starlight/components/Sidebar.astro';
+
+const { hasSidebar } = Astro.locals.starlightRoute;
+const { topics, isPageWithTopic } = Astro.locals.starlightSidebarTopics;
+---
+
+{
+	hasSidebar && isPageWithTopic && (
+		<ul class="zd-topics" aria-label="sections">
+			{topics.map((topic) => (
+				<li>
+					<a href={topic.link} aria-current={topic.isCurrent ? 'true' : undefined}>
+						{topic.label}
+					</a>
+				</li>
+			))}
+		</ul>
+	)
+}
+<Default><slot /></Default>

@@ -1,0 +1,29 @@
+---
+// the top bar, as on the design system's site: the lockup, the sections, then search
+// and the repository. below 72rem the sections move into the menu (see Sidebar.astro).
+import Search from 'virtual:starlight/components/Search';
+import SiteTitle from 'virtual:starlight/components/SiteTitle';
+
+const { topics } = Astro.locals.starlightSidebarTopics;
+---
+
+<div class="zd-header">
+	<SiteTitle />
+	<nav class="zd-sections" aria-label="sections">
+		<ul>
+			{
+				topics.map((topic) => (
+					<li>
+						<a class="zd-toplink" href={topic.link} aria-current={topic.isCurrent ? 'true' : undefined}>
+							{topic.label}
+						</a>
+					</li>
+				))
+			}
+		</ul>
+	</nav>
+	<div class="zd-aside print:hidden">
+		<Search />
+		<a class="zd-toplink zd-github" href="https://github.com/zaentrum/zaentrum">github</a>
+	</div>
+</div>

@@ -1,0 +1,520 @@
+/* the docs in the design system's look: its tokens (tokens.css) under Starlight's own
+ * names, its chrome in the monospace voice, square frames everywhere. the measures
+ * follow the design system's guidelines site (nalet.github.io/design-system). */
+
+:root,
+::backdrop,
+:root[data-theme='light'],
+[data-theme='light'] ::backdrop {
+  --sl-color-white: var(--fg);
+  --sl-color-gray-1: var(--fg);
+  --sl-color-gray-2: var(--fg-2);
+  --sl-color-gray-3: var(--fg-muted);
+  --sl-color-gray-4: var(--fg-dim);
+  --sl-color-gray-5: var(--border-2);
+  --sl-color-gray-6: var(--surface-2);
+  --sl-color-gray-7: var(--surface);
+  --sl-color-black: var(--bg);
+
+  --sl-color-accent-low: var(--state-information-bg);
+  --sl-color-accent: var(--state-information-border);
+  --sl-color-accent-high: var(--cloud-blue);
+
+  --sl-color-text: var(--fg-2);
+  --sl-color-text-accent: var(--cloud-blue);
+  --sl-color-text-invert: var(--bg);
+  --sl-color-bg: var(--bg);
+  --sl-color-bg-nav: var(--bg-2);
+  --sl-color-bg-sidebar: var(--bg);
+  --sl-color-bg-inline-code: var(--surface);
+  --sl-color-bg-accent: var(--cloud-blue);
+  --sl-color-hairline-light: var(--border-2);
+  --sl-color-hairline: var(--border);
+  --sl-color-hairline-shade: var(--bg);
+  --sl-color-backdrop-overlay: rgb(11 15 25 / 0.72);
+
+  --sl-color-orange-low: var(--state-warning-bg);
+  --sl-color-orange: var(--state-warning-border);
+  --sl-color-orange-high: var(--state-warning);
+  --sl-color-green-low: var(--state-success-bg);
+  --sl-color-green: var(--state-success-border);
+  --sl-color-green-high: var(--state-success);
+  --sl-color-blue-low: var(--state-information-bg);
+  --sl-color-blue: var(--state-information-border);
+  --sl-color-blue-high: var(--state-information);
+  --sl-color-red-low: var(--state-error-bg);
+  --sl-color-red: var(--state-error-border);
+  --sl-color-red-high: var(--state-error);
+  --sl-color-purple-low: var(--state-information-bg);
+  --sl-color-purple: var(--state-information-border);
+  --sl-color-purple-high: var(--state-information);
+
+  --sl-font: var(--ff-ui);
+  --sl-font-mono: var(--ff-mono);
+  --sl-text-h1: 2rem;
+  --sl-text-h2: 1.375rem;
+  --sl-text-h3: 1rem;
+  --sl-text-h4: 0.875rem;
+  --sl-text-h5: 0.875rem;
+  --sl-text-code: 0.85em;
+  --sl-line-height: 1.6;
+  --sl-line-height-headings: 1.2;
+
+  --sl-nav-height: 3.5rem;
+  --sl-sidebar-width: 15.5rem;
+  --sl-content-width: 47.5rem;
+
+  color-scheme: dark;
+}
+
+/* square frames everywhere, as in the library. */
+*,
+*::before,
+*::after {
+  border-radius: 0 !important;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg-2);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* ---- top bar --------------------------------------------------------------------- */
+
+header.header {
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-2);
+  padding-block: 0;
+}
+
+.zd-header {
+  display: flex;
+  align-items: center;
+  gap: var(--s-5);
+  height: 100%;
+}
+
+.zd-title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex: none;
+}
+
+.zd-home {
+  display: inline-flex;
+  /* the lockup's box has room around the mark: line the chevron up with the edge. */
+  margin-left: -6px;
+}
+
+.zd-lockup {
+  display: block;
+  height: 32px;
+  width: auto;
+}
+
+.zd-lockup path {
+  fill: none;
+  stroke: var(--cloud-blue);
+  stroke-width: 4.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.zd-lockup text {
+  fill: var(--fg-2);
+  font-family: var(--ff-mono);
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: 0.5px;
+}
+
+.zd-docs {
+  padding: 0 var(--s-2);
+  border-left: 1px solid var(--border-2);
+  color: var(--fg-muted);
+  font-family: var(--ff-mono);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 20px;
+  text-decoration: none;
+}
+
+.zd-docs:hover {
+  color: var(--fg);
+}
+
+.zd-sections {
+  display: none;
+  min-width: 0;
+}
+
+.zd-sections ul {
+  display: flex;
+  gap: var(--s-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.zd-toplink {
+  display: inline-flex;
+  align-items: center;
+  height: var(--sl-nav-height);
+  padding: 0 var(--s-2);
+  box-sizing: border-box;
+  color: var(--fg-muted);
+  font-family: var(--ff-mono);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.zd-toplink:hover {
+  color: var(--fg);
+}
+
+.zd-toplink[aria-current] {
+  color: var(--fg);
+  box-shadow: inset 0 -2px 0 var(--cloud-blue);
+}
+
+.zd-aside {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin-left: auto;
+}
+
+.zd-github {
+  display: none;
+}
+
+@media (min-width: 50rem) {
+  .zd-github {
+    display: inline-flex;
+  }
+}
+
+@media (min-width: 72rem) {
+  .zd-sections {
+    display: block;
+  }
+}
+
+/* search: a boxed field in the monospace voice */
+site-search button[data-open-modal] {
+  height: 32px;
+  border: 1px solid var(--border-2);
+  background: var(--bg);
+  color: var(--fg-muted);
+  font-family: var(--ff-mono);
+  font-size: 13px;
+}
+
+site-search button[data-open-modal]:hover {
+  border-color: var(--cloud-blue);
+  color: var(--fg);
+}
+
+site-search kbd {
+  background: var(--surface);
+  border: 1px solid var(--border-2);
+  font-family: var(--ff-mono);
+}
+
+/* ---- side navigation ------------------------------------------------------------- */
+
+.sidebar-pane {
+  border-inline-end: 1px solid var(--border);
+}
+
+/* the sections, at the top of the side navigation, only below 72rem */
+.zd-topics {
+  margin: 0 0 var(--s-3);
+  padding: 0 0 var(--s-3);
+  border-bottom: 1px solid var(--border);
+  list-style: none;
+}
+
+.zd-topics a {
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 var(--s-3);
+  color: var(--fg-muted);
+  font-family: var(--ff-mono);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.zd-topics a:hover {
+  color: var(--fg);
+}
+
+.zd-topics a[aria-current] {
+  color: var(--fg);
+  box-shadow: inset 2px 0 0 var(--cloud-blue);
+}
+
+@media (min-width: 72rem) {
+  .zd-topics {
+    display: none;
+  }
+}
+
+.sidebar-content a,
+.sidebar-content summary .group-label,
+.sidebar-content .large {
+  font-family: var(--ff-mono);
+}
+
+.sidebar-content .top-level > li + li {
+  margin-top: 0;
+}
+
+.sidebar-content a {
+  min-height: 30px;
+  padding: 6px var(--s-3);
+  color: var(--fg-muted);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.sidebar-content a:hover {
+  color: var(--fg);
+  background: var(--surface);
+}
+
+.sidebar-content a[aria-current='page'],
+.sidebar-content a[aria-current='page']:hover,
+.sidebar-content a[aria-current='page']:focus {
+  color: var(--fg);
+  background: var(--surface);
+  box-shadow: inset 2px 0 0 var(--cloud-blue);
+  font-weight: 400;
+}
+
+.sidebar-content summary .group-label .large {
+  color: var(--fg-dim);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+/* ---- on this page ---------------------------------------------------------------- */
+
+starlight-toc h2,
+mobile-starlight-toc .toggle {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--fg-dim);
+}
+
+starlight-toc a,
+mobile-starlight-toc a {
+  font-family: var(--ff-mono);
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg-muted);
+}
+
+starlight-toc a:hover {
+  color: var(--fg);
+}
+
+starlight-toc a[aria-current='true'] {
+  color: var(--cloud-blue);
+}
+
+/* ---- the page -------------------------------------------------------------------- */
+
+/* the title runs into the text, as on the design system site: no rule between them. */
+.content-panel + .content-panel {
+  border-top: 0;
+  padding-top: 0;
+}
+
+h1#_top {
+  color: var(--fg);
+  font-family: var(--ff-mono);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+.sl-markdown-content :is(h2, h3, h4, h5) {
+  color: var(--fg);
+  font-family: var(--ff-mono);
+  text-wrap: balance;
+}
+
+.sl-markdown-content h2 {
+  margin-top: var(--s-7);
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.sl-markdown-content h3 {
+  margin-top: var(--s-6);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.sl-markdown-content :is(h4, h5) {
+  font-weight: 600;
+}
+
+.sl-markdown-content :is(p, li) {
+  color: var(--fg-2);
+}
+
+.sl-markdown-content :is(strong, b, em) {
+  color: var(--fg);
+}
+
+.sl-markdown-content :is(strong, b) {
+  font-weight: 600;
+}
+
+.sl-markdown-content li::marker {
+  color: var(--fg-dim);
+}
+
+.sl-markdown-content a:not([class]) {
+  color: var(--cloud-blue);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.sl-markdown-content a:not([class]):hover {
+  text-decoration-thickness: 2px;
+}
+
+.sl-markdown-content code:not(:where(.expressive-code *)) {
+  padding: 1px 5px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  overflow-wrap: anywhere;
+}
+
+.sl-markdown-content blockquote {
+  border-inline-start: 2px solid var(--cloud-blue);
+  color: var(--fg);
+}
+
+.sl-markdown-content hr {
+  border-top-color: var(--border);
+}
+
+/* tables: framed cells, a monospace head, alternate rows on the surface */
+.sl-markdown-content table {
+  font-size: 14px;
+  line-height: 1.45;
+  border-collapse: collapse;
+}
+
+.sl-markdown-content :is(th, td) {
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--border);
+  color: var(--fg-2);
+  vertical-align: top;
+}
+
+.sl-markdown-content th {
+  background: var(--bg-2);
+  color: var(--fg-muted);
+  font-family: var(--ff-mono);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sl-markdown-content tbody tr:nth-child(2n) td {
+  background: var(--surface);
+}
+
+.sl-markdown-content td code {
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
+/* images: the mockups sit on the canvas in a frame */
+.sl-markdown-content img {
+  border: 1px solid var(--border);
+  background: var(--bg-2);
+}
+
+/* a diagram, drawn in the browser; until then, its source */
+.sl-markdown-content pre.mermaid {
+  display: flex;
+  justify-content: center;
+  margin: var(--s-5) 0;
+  padding: var(--s-4);
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  background: var(--bg-2);
+  color: var(--fg-dim);
+  font-family: var(--ff-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre;
+}
+
+.sl-markdown-content pre.mermaid[data-processed] {
+  white-space: normal;
+}
+
+/* asides keep the design system's state colours, framed, without the tint shift */
+.starlight-aside {
+  border-inline-start-width: 2px;
+}
+
+/* ---- the foot of the page -------------------------------------------------------- */
+
+.pagination-links a {
+  border: 1px solid var(--border-2);
+  box-shadow: none;
+  font-family: var(--ff-mono);
+}
+
+.pagination-links a:hover {
+  border-color: var(--cloud-blue);
+}
+
+.pagination-links .link-title {
+  color: var(--fg);
+  font-size: 14px;
+}
+
+footer .meta a,
+.sl-flex a[href*='/edit/'] {
+  font-family: var(--ff-mono);
+  font-size: 12px;
+}
+
+
+/* ---- the phone menu -------------------------------------------------------------- */
+
+/* the menu button as on the design system site: a frame, not a filled disc */
+.sl-menu-button {
+  background: var(--bg-2) !important;
+  color: var(--fg) !important;
+  border: 1px solid var(--border-2) !important;
+  box-shadow: none !important;
+}
+
+.sl-menu-button:has(~ :popover-open) {
+  border-color: var(--cloud-blue) !important;
+}

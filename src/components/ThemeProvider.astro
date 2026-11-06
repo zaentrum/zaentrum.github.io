@@ -1,0 +1,8 @@
+---
+// the design system's canvas is dark, and only dark: no theme picker, no light theme.
+---
+
+<script is:inline>
+	document.documentElement.dataset.theme = 'dark';
+	window.StarlightThemeProvider = { updatePickers() {} };
+</script>

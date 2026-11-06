@@ -1,0 +1,102 @@
+name: Deploy the site (Pages)
+
+# builds zaentrum.github.io - the product page at /, the docs at /docs/ - and
+# publishes it. the docs are the docs/ folder of zaentrum/zaentrum: every half hour
+# this asks whether that folder changed since the version in sources.lock.json, and
+# builds only when it did. a push here, or "Run workflow", builds at once.
+#
+# after a deploy the docs version goes into sources.lock.json. that commit is also
+# what keeps the schedule running: GitHub turns a schedule off after 60 days without
+# a commit (it e-mails first; "Enable workflow" turns it on again).
+#
+# one-time setup: Settings -> Pages -> Build and deployment -> Source: GitHub Actions.
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "7,37 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      built: ${{ steps.build.outcome == 'success' }}
+      sources: ${{ steps.build.outputs.sources }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Has docs/ changed since the live version?
+        id: changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          now=$(gh api repos/zaentrum/zaentrum/git/trees/main --jq '.tree[] | select(.path == "docs") | .sha')
+          live=$(jq -r '.[0].docs // ""' sources.lock.json 2>/dev/null || true)
+          echo "docs/ is $now, the live site has ${live:-nothing yet}"
+          if [ "$GITHUB_EVENT_NAME" = schedule ] && [ "$now" = "$live" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.changed.outputs.skip != 'true'
+        with:
+          repository: zaentrum/zaentrum
+          path: .sources/zaentrum
+
+      - uses: actions/setup-node@v4
+        if: steps.changed.outputs.skip != 'true'
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Build
+        id: build
+        if: steps.changed.outputs.skip != 'true'
+        env:
+          ASTRO_TELEMETRY_DISABLED: 1
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+          echo "sources=$(jq -c . public/docs/sources.json)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-pages-artifact@v3
+        if: steps.changed.outputs.skip != 'true'
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    if: needs.build.outputs.built == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+      - uses: actions/checkout@v4
+
+      - name: Record the docs version that is live
+        env:
+          SOURCES: ${{ needs.build.outputs.sources }}
+        run: |
+          echo "$SOURCES" | jq . > sources.lock.json
+          git diff --quiet -- sources.lock.json && exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "docs: live from zaentrum/zaentrum@$(jq -r '.[0].commit[0:7]' sources.lock.json)" -- sources.lock.json
+          git pull --rebase --quiet && git push

@@ -1,0 +1,115 @@
+/* vendored from @nalet/design-system 0.3.0 (src/styles/tokens.css, generated from tokens/tokens.json).
+ * refresh by copying it again; never edit it here. */
+
+:root {
+  /* the canvas is dark: native controls, scrollbars and form widgets follow. */
+  color-scheme: dark;
+
+  /* canvas */
+  --bg:                       #0B0F19;
+  --bg-2:                     #0D1117;
+  --surface:                  #11161F;
+  --surface-2:                #161B26;
+  --border:                   #1F2633;
+  --border-2:                 #2A3142;
+  --surface-selected:         #111B2A;
+  --surface-focus:            #2A3142;
+
+  /* foreground */
+  --fg:                       #E6E6E6;
+  --fg-2:                     #C9D1D9;
+  --fg-muted:                 #AEB8C2;
+  --fg-dim:                   #7B8597;
+
+  /* brand & signal */
+  --cloud-blue:               #58A6FF;
+  --cloud-cyan:               #00A4DC;
+  --signal-green:             #2EA043;
+  --signal-amber:             #F2B233;
+  --signal-red:               #F85149;
+
+  /* controls (boundaries + focus) */
+  --border-control:           #646C7A;
+  --focus-ring:               #00A4DC;
+
+  /* semantic state (text/icon, -bg tint, -border) */
+  --state-neutral:            #AEB8C2;
+  --state-neutral-bg:         #161B26;
+  --state-neutral-border:     #2A3142;
+  --state-information:        #58A6FF;
+  --state-information-bg:     #15202E;
+  --state-information-border: #3F6697;
+  --state-success:            #2EA043;
+  --state-success-bg:         #101F1B;
+  --state-success-border:     #2C6342;
+  --state-warning:            #F2B233;
+  --state-warning-bg:         #24211A;
+  --state-warning-border:     #846B3B;
+  --state-error:              #F85149;
+  --state-error-bg:           #25171C;
+  --state-error-border:       #873F45;
+
+  /* type */
+  --ff-ui:   Inter, system-ui, sans-serif;
+  --ff-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* space (4-base) */
+  --s-1: 4px;  --s-2: 8px;  --s-3: 12px;  --s-4: 16px;
+  --s-5: 24px;  --s-6: 32px;  --s-7: 48px;  --s-8: 64px;
+}
+
+/* base — dark canvas, ui family. square frames everywhere (no border-radius). */
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--ff-ui);
+}
+
+/* type roles — apply as utility classes (mono for display/system, ui for prose) */
+.type-display {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-weight: 800;
+  font-size: 56px;
+  line-height: 1.00;
+  letter-spacing: -0.030em;
+}
+
+.type-h1 {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-weight: 700;
+  font-size: 32px;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+}
+
+.type-h2 {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-weight: 600;
+  font-size: 22px;
+  line-height: 1.20;
+  letter-spacing: 0;
+}
+
+.type-body {
+  font-family: Inter, system-ui, sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.55;
+  letter-spacing: 0;
+}
+
+.type-ui {
+  font-family: Inter, system-ui, sans-serif;
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 1.40;
+  letter-spacing: 0;
+}
+
+.type-code {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 1.50;
+  letter-spacing: 0;
+}

@@ -1,0 +1,13 @@
+{
+	"skipLink.label": "skip to content",
+	"search.label": "search",
+	"search.cancelLabel": "cancel",
+	"menuButton.accessibleLabel": "menu",
+	"sidebarNav.accessibleLabel": "pages",
+	"tableOfContents.onThisPage": "on this page",
+	"tableOfContents.overview": "overview",
+	"page.editLink": "edit this page",
+	"page.previousLink": "previous",
+	"page.nextLink": "next",
+	"404.text": "There's no page at this address."
+}

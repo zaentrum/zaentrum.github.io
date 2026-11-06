@@ -1,0 +1,77 @@
+{
+  "name": "nalet",
+  "type": "dark",
+  "colors": {
+    "editor.background": "#0D1117",
+    "editor.foreground": "#C9D1D9"
+  },
+  "tokenColors": [
+    {
+      "settings": {
+        "foreground": "#C9D1D9"
+      }
+    },
+    {
+      "scope": [
+        "comment",
+        "punctuation.definition.comment"
+      ],
+      "settings": {
+        "foreground": "#7B8597"
+      }
+    },
+    {
+      "scope": [
+        "keyword",
+        "storage",
+        "storage.type",
+        "storage.modifier",
+        "keyword.control",
+        "keyword.operator.new",
+        "keyword.operator.expression",
+        "keyword.operator.logical",
+        "constant.language"
+      ],
+      "settings": {
+        "foreground": "#58A6FF"
+      }
+    },
+    {
+      "scope": [
+        "string",
+        "string.quoted",
+        "string.template",
+        "punctuation.definition.string",
+        "constant.numeric"
+      ],
+      "settings": {
+        "foreground": "#E6E6E6"
+      }
+    },
+    {
+      "scope": [
+        "entity.name.tag",
+        "support.class.component",
+        "entity.name.type",
+        "entity.name.function",
+        "support.function",
+        "meta.function-call entity.name.function",
+        "support.type.property-name.css"
+      ],
+      "settings": {
+        "foreground": "#00A4DC"
+      }
+    },
+    {
+      "scope": [
+        "punctuation",
+        "meta.brace",
+        "keyword.operator",
+        "entity.other.attribute-name"
+      ],
+      "settings": {
+        "foreground": "#AEB8C2"
+      }
+    }
+  ]
+}

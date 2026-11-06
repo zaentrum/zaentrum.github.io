@@ -1,0 +1,62 @@
+---
+// the page's text. a ```mermaid block is drawn here, in the browser, in the design
+// system's colours (see src/lib/remark-mermaid.mjs); a page without one loads nothing.
+import Default from '@astrojs/starlight/components/MarkdownContent.astro';
+---
+
+<Default><slot /></Default>
+
+<script>
+	const blocks = document.querySelectorAll<HTMLElement>('pre.mermaid');
+	if (blocks.length) {
+		import('mermaid').then(async ({ default: mermaid }) => {
+			const css = getComputedStyle(document.documentElement);
+			const token = (name: string) => css.getPropertyValue(name).trim();
+			mermaid.initialize({
+				startOnLoad: false,
+				securityLevel: 'strict',
+				// flat frames, as in the library: no glow, no hand-drawn look.
+				look: 'classic',
+				theme: 'base',
+				flowchart: { wrappingWidth: 320 },
+				fontFamily: token('--ff-ui'),
+				themeVariables: {
+					darkMode: true,
+					background: token('--bg'),
+					fontFamily: token('--ff-ui'),
+					fontSize: '14px',
+					primaryColor: token('--surface'),
+					primaryTextColor: token('--fg'),
+					primaryBorderColor: token('--state-information-border'),
+					secondaryColor: token('--surface-2'),
+					tertiaryColor: token('--bg-2'),
+					lineColor: token('--fg-muted'),
+					textColor: token('--fg-2'),
+					mainBkg: token('--surface'),
+					nodeBorder: token('--state-information-border'),
+					clusterBkg: token('--bg-2'),
+					clusterBorder: token('--border-2'),
+					edgeLabelBackground: token('--bg'),
+					titleColor: token('--fg'),
+					noteBkgColor: token('--surface-2'),
+					noteTextColor: token('--fg-2'),
+					noteBorderColor: token('--border-2'),
+					actorBkg: token('--surface'),
+					actorBorder: token('--state-information-border'),
+					actorTextColor: token('--fg'),
+					actorLineColor: token('--border-control'),
+					signalColor: token('--fg-muted'),
+					signalTextColor: token('--fg-2'),
+					labelBoxBkgColor: token('--surface-2'),
+					labelBoxBorderColor: token('--border-2'),
+					labelTextColor: token('--fg-2'),
+					loopTextColor: token('--fg-2'),
+					activationBkgColor: token('--surface-2'),
+					activationBorderColor: token('--state-information-border'),
+					sequenceNumberColor: token('--bg'),
+				},
+			});
+			await mermaid.run({ nodes: blocks });
+		});
+	}
+</script>
