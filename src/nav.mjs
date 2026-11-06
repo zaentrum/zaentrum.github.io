@@ -2,9 +2,11 @@
 // order of its side navigation. a page is named by its path in zaentrum/zaentrum's
 // docs/ folder. the names are chrome: lowercase.
 //
-// a page in a section's folder that isn't listed here still belongs to that section
-// (see FOLDERS): it builds and can be linked, but has no place in the side navigation
-// until it is listed. `npm run build` names every such page.
+// this file only gives pages their place and their name; the docs decide which pages
+// there are. a page it doesn't list goes at the end of its folder's section (FOLDERS),
+// under its title, and a folder no section has becomes a section of its own, last in
+// the top bar. a page it lists that docs/ no longer has is left out. `npm run build`
+// names both, and neither stops it.
 import pages from './generated/pages.json' with { type: 'json' };
 
 const SECTIONS = [
@@ -93,24 +95,33 @@ const SECTIONS = [
   },
 ];
 
-// the folder each section's unlisted pages come from; the root folder's are "run it".
-const FOLDERS = { extend: 'extending', library: 'library', portal: 'portal', chino: 'chino', architecture: 'adr' };
+// the folder whose unlisted pages each section takes; the root folder's go to "run it".
+const FOLDERS = { run: '', extend: 'extending', library: 'library', portal: 'portal', chino: 'chino', architecture: 'adr' };
 
 const bySource = new Map(pages.map((p) => [p.source.replace(/^docs\//, ''), p]));
 const slug = (route) => route.replace(/^\/|\/$/g, '');
 
-export const topics = SECTIONS.map((section) => {
-  const items = section.pages.map(([rel, label]) => {
-    const page = bySource.get(rel);
-    if (!page) throw new Error(`src/nav.mjs lists docs/${rel}, which zaentrum/zaentrum doesn't have`);
-    return { label, slug: slug(page.route) };
-  });
+// listed here, gone from docs/
+export const gone = SECTIONS.flatMap((s) => s.pages.map(([rel]) => rel)).filter((rel) => !bySource.has(rel));
+const sections = SECTIONS.map((s) => ({ ...s, pages: s.pages.filter(([rel]) => bySource.has(rel)) }));
+
+// in docs/, not listed here
+const listed = new Set(sections.flatMap((s) => s.pages.map(([rel]) => rel)));
+export const unlisted = [...bySource.keys()].filter((rel) => !listed.has(rel)).sort();
+for (const rel of unlisted) {
+  const folder = rel.includes('/') ? rel.slice(0, rel.indexOf('/')) : '';
+  const id = Object.keys(FOLDERS).find((key) => FOLDERS[key] === folder) ?? folder;
+  let section = sections.find((s) => s.id === id);
+  if (!section) {
+    section = { id, label: folder.replaceAll('-', ' '), pages: [] };
+    sections.push(section);
+    FOLDERS[id] = folder;
+  }
+  if (rel === (folder ? `${folder}/README.md` : 'README.md')) section.pages.unshift([rel, 'overview']);
+  else section.pages.push([rel, bySource.get(rel).title.toLowerCase()]);
+}
+
+export const topics = sections.filter((s) => s.pages.length).map((section) => {
+  const items = section.pages.map(([rel, label]) => ({ label, slug: slug(bySource.get(rel).route) }));
   return { id: section.id, label: section.label, link: '/' + items[0].slug + '/', items };
 });
-
-export const topicFolders = Object.fromEntries(
-  Object.entries(FOLDERS).map(([id, folder]) => [id, [`/docs/${folder}/**`]]),
-);
-
-const listed = new Set(SECTIONS.flatMap((s) => s.pages.map(([rel]) => rel)));
-export const unlisted = pages.map((p) => p.source.replace(/^docs\//, '')).filter((rel) => !listed.has(rel));

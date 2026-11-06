@@ -44,12 +44,21 @@ To build from a working copy instead, name it:
 The build fails when a link leads nowhere, including a `#heading` that doesn't
 exist. The live site then stays as it was.
 
-## When a page is added
+## When a page is added, moved or removed
 
-A new page in a section's folder belongs to that section straight away, but it
-has no place in the side navigation until it's added to `src/nav.mjs`. The build
-lists every page that isn't there yet. A new decision record (`docs/adr/0016-…`)
-is listed by itself.
+`src/nav.mjs` gives pages their place and their name; the docs decide which
+pages there are.
+
+- A page `src/nav.mjs` doesn't list goes at the end of its folder's section,
+  under its title. A new folder becomes a section of its own, last in the top bar.
+- A page `src/nav.mjs` lists that `docs/` no longer has is left out.
+- A new decision record (`docs/adr/0016-…`) is listed by itself, in order.
+
+The build names every such page, and none of them stops it. What stops it is a
+link that leads nowhere, or a page without a `# heading`.
+
+zaentrum/zaentrum's `docs-check` runs the same build for every change to
+`docs/`, so a break shows on the commit that made it.
 
 ## Publishing
 

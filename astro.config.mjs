@@ -12,11 +12,14 @@ import { unified } from '@astrojs/markdown-remark';
 import starlightSidebarTopics from 'starlight-sidebar-topics';
 import starlightLinksValidator from 'starlight-links-validator';
 import { remarkMermaid } from './src/lib/remark-mermaid.mjs';
-import { topics, topicFolders, unlisted } from './src/nav.mjs';
+import { topics, unlisted, gone } from './src/nav.mjs';
 import codeTheme from './src/lib/code-theme.json' with { type: 'json' };
 
 if (unlisted.length) {
-  console.warn(`not in the side navigation yet (src/nav.mjs): ${unlisted.map((p) => `docs/${p}`).join(', ')}`);
+  console.warn(`at the end of their section until src/nav.mjs lists them: ${unlisted.map((p) => `docs/${p}`).join(', ')}`);
+}
+if (gone.length) {
+  console.warn(`listed in src/nav.mjs, gone from docs/: ${gone.map((p) => `docs/${p}`).join(', ')}`);
 }
 
 export default defineConfig({
@@ -72,7 +75,8 @@ export default defineConfig({
         },
       },
       plugins: [
-        starlightSidebarTopics(topics, { topics: { run: ['/docs/*'], ...topicFolders }, exclude: ['/404'] }),
+        // every docs page is in a section's side navigation (src/nav.mjs); the 404 page is in none.
+        starlightSidebarTopics(topics, { exclude: ['/404'] }),
         // the product page and the schemas site are outside the docs.
         starlightLinksValidator({ exclude: ['/', '/schemas/**'] }),
       ],
