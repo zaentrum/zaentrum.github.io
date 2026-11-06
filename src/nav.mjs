@@ -70,6 +70,8 @@ const SECTIONS = [
     label: 'chino',
     pages: [
       ['chino/README.md', 'overview'],
+      ['chino/screens.md', 'screens'],
+      ['chino/home.md', 'home'],
       ['chino/title-actions.md', 'title actions'],
       ['chino/playback.md', 'playback'],
       ['chino/subtitles.md', 'subtitles'],

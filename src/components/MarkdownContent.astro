@@ -1,10 +1,18 @@
 ---
 // the page's text. a ```mermaid block is drawn here, in the browser, in the design
 // system's colours (see src/lib/remark-mermaid.mjs); a page without one loads nothing.
+//
+// every picture in the docs is a drawing rendered at twice its size
+// (scripts/render-mockups.mjs in zaentrum/zaentrum), so it is shown at half its
+// pixel size: a phone as wide as a phone, and nothing wider than the column.
 import Default from '@astrojs/starlight/components/MarkdownContent.astro';
+
+const html = (await Astro.slots.render('default')).replace(/<img\b[^>]*>/g, (tag) =>
+	tag.replace(/\b(width|height)="(\d+)"/g, (_, name, px) => `${name}="${Math.round(Number(px) / 2)}"`),
+);
 ---
 
-<Default><slot /></Default>
+<Default><Fragment set:html={html} /></Default>
 
 <script>
 	const blocks = document.querySelectorAll<HTMLElement>('pre.mermaid');
