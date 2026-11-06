@@ -1,10 +1,13 @@
 ---
 // the side navigation: the current section's pages. below 72rem, where the top bar
-// has no room for the sections, they lead the list, as in the design system's menu.
+// has no room for the sections, the area's sections lead the list, as in the design
+// system's menu.
 import Default from '@astrojs/starlight/components/Sidebar.astro';
 
 const { hasSidebar } = Astro.locals.starlightRoute;
-const { topics, isPageWithTopic } = Astro.locals.starlightSidebarTopics;
+const { isPageWithTopic } = Astro.locals.starlightSidebarTopics;
+const area = Astro.url.pathname.startsWith('/spec/') ? '/spec/' : '/docs/';
+const topics = Astro.locals.starlightSidebarTopics.topics.filter((topic) => topic.link.startsWith(area));
 ---
 
 {

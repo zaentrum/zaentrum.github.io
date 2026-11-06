@@ -149,6 +149,16 @@ header.header {
   color: var(--fg);
 }
 
+/* the two areas, docs and spec: the one being read is bright */
+.zd-docs[aria-current='true'] {
+  color: var(--fg);
+}
+
+.zd-spec {
+  border-left: 0;
+  padding-left: 0;
+}
+
 .zd-sections {
   display: none;
   min-width: 0;
@@ -454,6 +464,16 @@ h1#_top {
 .sl-markdown-content img {
   border: 1px solid var(--border);
   background: var(--bg-2);
+}
+
+/* a figure's caption: the paragraph right under its picture ("Figure 4.2: …") */
+.sl-markdown-content p:has(> img:only-child) {
+  margin-bottom: 0;
+}
+.sl-markdown-content p:has(> img:only-child) + p {
+  margin-top: var(--s-2);
+  font: 500 12px/1.5 var(--ff-mono);
+  color: var(--fg-muted);
 }
 
 /* a diagram, drawn in the browser; until then, its source */

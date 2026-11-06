@@ -1,6 +1,11 @@
 ---
-// the lockup goes home, to the product page at /; "docs" goes to the docs' first page.
+// the lockup goes home, to the product page at /. "docs" and "spec" go to the two
+// areas: the documentation, and the specification of the product's screens; the one
+// being read is marked. "spec" shows once the specification has pages.
 // inline, so the lockup's word is set in the page's own JetBrains Mono.
+const { topics } = Astro.locals.starlightSidebarTopics;
+const area = Astro.url.pathname.startsWith('/spec/') ? 'spec' : 'docs';
+const hasSpec = topics.some((topic) => topic.link.startsWith('/spec/'));
 ---
 
 <span class="zd-title">
@@ -10,5 +15,6 @@
 			<text x="28" y="28">zaentrum</text>
 		</svg>
 	</a>
-	<a class="zd-docs" href="/docs/">docs</a>
+	<a class="zd-docs" href="/docs/" aria-current={area === 'docs' ? 'true' : undefined}>docs</a>
+	{hasSpec && <a class="zd-docs zd-spec" href="/spec/" aria-current={area === 'spec' ? 'true' : undefined}>spec</a>}
 </span>

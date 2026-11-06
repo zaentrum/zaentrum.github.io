@@ -3,5 +3,6 @@ dist/
 .astro/
 .sources/
 src/content/docs/docs/
+src/content/docs/spec/
 src/generated/
 public/docs/

@@ -1,10 +1,12 @@
 ---
-// the top bar, as on the design system's site: the lockup, the sections, then search
-// and the repository. below 72rem the sections move into the menu (see Sidebar.astro).
+// the top bar, as on the design system's site: the lockup, the sections of the area
+// being read (docs or spec), then search and the repository. below 72rem the
+// sections move into the menu (see Sidebar.astro).
 import Search from 'virtual:starlight/components/Search';
 import SiteTitle from 'virtual:starlight/components/SiteTitle';
 
-const { topics } = Astro.locals.starlightSidebarTopics;
+const area = Astro.url.pathname.startsWith('/spec/') ? '/spec/' : '/docs/';
+const topics = Astro.locals.starlightSidebarTopics.topics.filter((topic) => topic.link.startsWith(area));
 ---
 
 <div class="zd-header">

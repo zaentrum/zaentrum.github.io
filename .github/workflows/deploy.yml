@@ -1,9 +1,10 @@
 name: Deploy the site (Pages)
 
-# builds zaentrum.github.io - the product page at /, the docs at /docs/ - and
-# publishes it. the docs are the docs/ folder of zaentrum/zaentrum: every half hour
-# this asks whether that folder changed since the version in sources.lock.json, and
-# builds only when it did. a push here, or "Run workflow", builds at once.
+# builds zaentrum.github.io - the product page at /, the docs at /docs/, the
+# specification at /spec/ - and publishes it. the pages are the docs/ and spec/
+# folders of zaentrum/zaentrum: every half hour this asks whether either changed
+# since the version in sources.lock.json, and builds only when one did. a push here,
+# or "Run workflow", builds at once.
 #
 # after a deploy the docs version goes into sources.lock.json. that commit is also
 # what keeps the schedule running: GitHub turns a schedule off after 60 days without
@@ -34,14 +35,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Has docs/ changed since the live version?
+      - name: Have docs/ or spec/ changed since the live version?
         id: changed
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          now=$(gh api repos/zaentrum/zaentrum/git/trees/main --jq '.tree[] | select(.path == "docs") | .sha')
-          live=$(jq -r '.[0].docs // ""' sources.lock.json 2>/dev/null || true)
-          echo "docs/ is $now, the live site has ${live:-nothing yet}"
+          now=$(gh api repos/zaentrum/zaentrum/git/trees/main --jq '[.tree[] | select(.path == "docs" or .path == "spec") | "\(.path)=\(.sha)"] | join(" ")')
+          live=$(jq -r '.[0] | ["docs=" + (.docs // ""), (if .spec then "spec=" + .spec else empty end)] | join(" ")' sources.lock.json 2>/dev/null || true)
+          echo "main has $now, the live site has ${live:-nothing yet}"
           if [ "$GITHUB_EVENT_NAME" = schedule ] && [ "$now" = "$live" ]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
           fi
