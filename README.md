@@ -15,6 +15,7 @@ look.
 | The sections and the order of their pages | [`src/nav.mjs`](src/nav.mjs) |
 | How a docs page becomes a site page | [`scripts/sync-docs.mjs`](scripts/sync-docs.mjs) |
 | The look: the nalet design system's tokens on [Starlight](https://starlight.astro.build) | [`src/styles/`](src/styles/), [`src/components/`](src/components/) |
+| The old address of the product page, `/zaentrum/`, sent on to `/` | [`astro.config.mjs`](astro.config.mjs) (`redirects`) |
 | Publishing | [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) |
 | The docs version that is live | [`sources.lock.json`](sources.lock.json) |
 

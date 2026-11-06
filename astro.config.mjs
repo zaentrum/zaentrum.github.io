@@ -23,6 +23,8 @@ export default defineConfig({
   site: 'https://zaentrum.github.io',
   trailingSlash: 'always',
   devToolbar: { enabled: false },
+  // the product page used to be zaentrum/zaentrum's own Pages site, at /zaentrum/.
+  redirects: { '/zaentrum/': '/' },
   markdown: {
     // straight quotes and dashes stay as they are written; the docs quote code.
     processor: unified({ remarkPlugins: [remarkMermaid], smartypants: false }),
