@@ -11,6 +11,7 @@ export const LENSES = [
       ['ships', 'ships', 'info'],
       ['idle', 'idle', 'warning'],
       ['outside', 'outside', 'neutral'],
+      ['demo', 'the demo\'s', 'neutral'],
       ['beside', 'beside', 'neutral'],
       ['later', 'later', 'none'],
       ['retired', 'retired', 'none'],

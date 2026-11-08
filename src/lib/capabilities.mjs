@@ -99,6 +99,7 @@ export const COMPONENT_STATUS = {
   ships: { name: 'ships', tone: 'info', says: 'published for people to install' },
   idle: { name: 'idle', tone: 'warning', says: 'built, and nothing runs it yet' },
   outside: { name: 'outside', tone: 'neutral', says: "not the platform's: the platform calls it" },
+  demo: { name: 'demo', tone: 'neutral', says: 'in the chart for the reference demo only, behind an option a plain install leaves off' },
   beside: { name: 'beside', tone: 'neutral', says: 'part of the project, not of the running platform' },
   later: { name: 'later', tone: 'none', says: "a later product's" },
   retired: { name: 'retired', tone: 'none', says: 'its repository is archived' },
