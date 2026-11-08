@@ -80,6 +80,18 @@ const SECTIONS = [
     pages: [['spec/README.md', 'the specification']],
   },
   {
+    id: 'capabilities',
+    label: 'capabilities',
+    pages: [
+      ['spec/capabilities/README.md', 'the model'],
+      ['spec/capabilities/chino.md', 'chino'],
+      ['spec/capabilities/portal.md', 'the portal'],
+      ['spec/capabilities/catalog.md', 'the catalog and the pipeline'],
+      ['spec/capabilities/platform.md', 'the platform'],
+      ['spec/capabilities/configuration.md', 'configuration'],
+    ],
+  },
+  {
     id: 'chino',
     label: 'chino',
     pages: [
@@ -117,7 +129,7 @@ const SECTIONS = [
 // the folder whose unlisted pages each section takes
 const FOLDERS = {
   run: ['docs'], extend: ['docs/extending'], library: ['docs/library'], architecture: ['docs/adr'],
-  spec: ['spec'], chino: ['spec/chino', 'docs/chino'], portal: ['spec/portal', 'docs/portal'],
+  spec: ['spec'], capabilities: ['spec/capabilities'], chino: ['spec/chino', 'docs/chino'], portal: ['spec/portal', 'docs/portal'],
 };
 
 const bySource = new Map(pages.map((p) => [p.source, p]));
