@@ -15,6 +15,7 @@ look.
 | The sections and the order of their pages | [`src/nav.mjs`](src/nav.mjs) |
 | How a docs page becomes a site page | [`scripts/sync-docs.mjs`](scripts/sync-docs.mjs) |
 | The capability map and a fact sheet for each capability | [`src/pages/spec/capabilities/`](src/pages/spec/capabilities/), [`src/components/capabilities/`](src/components/capabilities/), [`src/lib/capabilities.mjs`](src/lib/capabilities.mjs) |
+| The architecture map and a fact sheet for each component | [`src/pages/spec/architecture/`](src/pages/spec/architecture/), [`src/components/architecture/`](src/components/architecture/), [`src/lib/archmap-lenses.mjs`](src/lib/archmap-lenses.mjs) |
 | The look: the nalet design system's tokens on [Starlight](https://starlight.astro.build) | [`src/styles/`](src/styles/), [`src/components/`](src/components/) |
 | The old address of the product page, `/zaentrum/`, sent on to `/` | [`astro.config.mjs`](astro.config.mjs) (`redirects`) |
 | Publishing | [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) |
@@ -66,6 +67,20 @@ builds:
 
 The structure comes from the JSON; the words come from the copied pages, so a
 change's row and a section read as they do on their own pages.
+
+The same JSON holds the architecture (`spec/architecture/`): the components, their
+connections and the decision records. From it the site builds:
+
+- `/spec/architecture/map/`: a lane for each layer, a tile for each component,
+  coloured by a lens (status, capabilities, requirements, settings, decisions,
+  findings). Pointing at a tile draws its connections, solid to what it reaches,
+  dashed from what reaches it. A tile opens the component's fact sheet.
+- `/spec/architecture/<key>/`: the fact sheet. What it runs as and where it is
+  reached, its connections both ways (each with the places in the code that make
+  it), the capabilities it serves and the requirements open on them, what it
+  offers in the code, its settings, its decisions and what the model finds.
+
+A capability's fact sheet names the components that build it and its decisions.
 
 ## When a page is added, moved or removed
 

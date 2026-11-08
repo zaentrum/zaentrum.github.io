@@ -1,0 +1,437 @@
+---
+// /spec/architecture/map/: the architecture as a map. a lane for each layer (the apps,
+// the portal, chino's services, the catalog, the pipeline, the bundled services, running
+// the platform, outside, beside, later, retired), a tile for each component, coloured by
+// a lens: its status, the capabilities it serves, the requirements open on them, its
+// settings, its decisions, what the model finds. pointing at a tile draws its connections
+// and lights the components at their other end; a tile opens the component's fact sheet
+// beside the map (the element of its page, /spec/architecture/<key>/, fetched from
+// there). the lenses are src/lib/archmap-lenses.mjs, for the page as built and for the
+// browser alike.
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import { load, adrName } from '../../../lib/capabilities.mjs';
+import { LENSES, classify } from '../../../lib/archmap-lenses.mjs';
+import '../../../styles/capabilities.css';
+
+const m = load();
+const a = m?.architecture;
+
+// a tile's values, as its data attributes hold them
+function values(c: any) {
+	return {
+		status: c.status,
+		kind: c.kind,
+		caps: String(c.capabilities.length),
+		changes: String(c.changes.length),
+		open: String(c.open.length),
+		config: c.config,
+		labConfig: c.fixed ? `${c.fixed} fixed in code` : c.settings.length ? `${c.settings.length} setting${c.settings.length === 1 ? '' : 's'}` : 'no setting',
+		adrs: String(c.decisions.length),
+		labAdrs: c.decisions.length ? adrName({ number: c.decisions[0] }) + (c.decisions.length > 1 ? ` +${c.decisions.length - 1}` : '') : '',
+		found: String(c.findings.length),
+	};
+}
+const attrs = (d: Record<string, string>) => Object.fromEntries(Object.entries(d).map(([k, v]) => ['data-' + k.replace(/[A-Z]/g, (x) => '-' + x.toLowerCase()), v]));
+const words = (c: any) =>
+	[c.key, c.component, c.kind, c.status, c.code, ...c.runs.map((r: any) => r.name), ...c.reached.map((r: any) => r.name), ...c.decisions.map((n: string) => 'adr-' + n)]
+		.join(' ')
+		.toLowerCase();
+const ends = (xs: any[], end: 'from' | 'to') => [...new Set(xs.map((x) => x[end]))].join(' ');
+const lanes = (a?.layers ?? [])
+	.map((l: any) => ({ ...l, comps: a.components.filter((c: any) => c.layer === l.key).map((c: any) => ({ ...c, d: values(c) })) }))
+	.filter((l: any) => l.comps.length);
+const all = lanes.flatMap((l: any) => l.comps);
+const legendCount = (lens: string, cls: string) => all.filter((c: any) => classify(c.d, lens).cls === cls).length;
+const first = LENSES[0].key;
+---
+
+<StarlightPage
+	frontmatter={{
+		title: 'Architecture map',
+		description: 'Every component of zaentrum, by layer: what runs it, what it connects to, the capabilities it serves, its settings and its decisions.',
+		tableOfContents: false,
+		editUrl: false,
+	}}
+>
+	{
+		!a ? (
+			<p>The architecture is not in the version of zaentrum/zaentrum this site was built from.</p>
+		) : (
+			<div class="capmap archmap" data-lens={first}>
+				<p>
+					Every component of zaentrum, by layer. Point at a tile to draw its connections: solid to what it reaches,
+					dashed from what reaches it. Colour the tiles by their status, the capabilities they serve, the requirements
+					open on those, their settings, their decisions or what the model finds; a tile opens its fact sheet. As lists:{' '}
+					<a href="/spec/architecture/components/">components</a>, <a href="/spec/architecture/connections/">connections</a>,{' '}
+					<a href="/spec/architecture/decisions/">decisions</a>; how the model is made: <a href="/spec/architecture/">the model</a>; what
+					the components do: <a href="/spec/capabilities/map/">the capability map</a>.
+				</p>
+
+				<form class="capmap-bar not-content" aria-label="the map's view">
+					<fieldset class="capmap-seg">
+						<legend>colour by</legend>
+						<div class="capmap-opts">
+							{LENSES.map((l) => (
+								<label>
+									<input type="radio" name="lens" value={l.key} checked={l.key === first} />
+									<span>{l.label}</span>
+								</label>
+							))}
+						</div>
+					</fieldset>
+					<label class="capmap-find">
+						<span>find</span>
+						<input type="search" name="q" placeholder="a component, a workload, a path, adr-0013" autocomplete="off" />
+					</label>
+				</form>
+
+				<div class="capmap-legend not-content">
+					<p class="capmap-shown" aria-live="polite">
+						<b data-shown>{all.length}</b> of {all.length} components
+					</p>
+					{LENSES.map((l) => (
+						<ul data-for={l.key} hidden={l.key !== first} aria-label={`colours: ${l.label}`}>
+							{l.classes.map(([key, name, tone]) => (
+								<li>
+									<button type="button" data-cls={key} data-tone={tone} aria-pressed="false">
+										<span class="capmap-swatch" aria-hidden="true" />
+										{name} <b data-count>{legendCount(l.key, key)}</b>
+									</button>
+								</li>
+							))}
+						</ul>
+					))}
+				</div>
+
+				<div class="capmap-lanes archmap-lanes not-content" data-pagefind-ignore>
+					<svg class="archmap-wires" aria-hidden="true">
+						<defs>
+							<marker id="archmap-head-out" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+								<path d="M0 0 L10 5 L0 10 z" />
+							</marker>
+							<marker id="archmap-head-in" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+								<path d="M0 0 L10 5 L0 10 z" />
+							</marker>
+						</defs>
+						<g data-wires />
+					</svg>
+					{lanes.map((lane: any) => (
+						<section class="capmap-lane archmap-lane" aria-labelledby={`lane-${lane.key}`}>
+							<header class="capmap-lane-head">
+								<h2 id={`lane-${lane.key}`}>{lane.label}</h2>
+								<span>
+									{lane.comps.length} {lane.comps.length === 1 ? 'component' : 'components'}
+								</span>
+							</header>
+							<ul class="capmap-tiles archmap-tiles">
+								{lane.comps.map((c: any) => {
+									const k = classify(c.d, first);
+									return (
+										<li>
+											<a
+												class="capmap-tile archmap-tile"
+												href={c.url}
+												id={`tile-${c.key}`}
+												data-key={c.key}
+												data-out={ends(c.out, 'to')}
+												data-in={ends(c.in, 'from')}
+												data-cls={k.cls}
+												data-tone={k.tone}
+												data-words={words(c)}
+												title={`${c.key}: ${c.component}`}
+												{...attrs(c.d)}
+											>
+												<span class="archmap-key">{c.key}</span>
+												<span class="archmap-is">{c.component}</span>
+												<span class="capmap-foot">
+													<span class="capmap-lab">{k.label}</span>
+													<span class="archmap-degree" title={`reaches ${c.out.length}, reached by ${c.in.length}`}>
+														{c.out.length}↗ {c.in.length}↙
+													</span>
+												</span>
+											</a>
+										</li>
+									);
+								})}
+							</ul>
+						</section>
+					))}
+				</div>
+
+				<dialog class="capmap-sheet" aria-labelledby="capmap-sheet-title">
+					<div class="capmap-sheet-bar not-content">
+						<button type="button" data-step="-1" aria-keyshortcuts="ArrowLeft">previous</button>
+						<button type="button" data-step="1" aria-keyshortcuts="ArrowRight">next</button>
+						<span class="capmap-sheet-at" aria-live="polite" />
+						<a class="capmap-sheet-page" href="#">open as a page</a>
+						<button type="button" data-close>close</button>
+					</div>
+					<h2 id="capmap-sheet-title" class="capmap-sheet-title" />
+					<div class="capmap-sheet-body" />
+				</dialog>
+			</div>
+		)
+	}
+</StarlightPage>
+
+<style is:global>
+	/* the map takes the width there is: no column of text here */
+	:root {
+		--sl-content-width: 100rem;
+	}
+</style>
+
+<script>
+	import { LENSES, classify } from '../../../lib/archmap-lenses.mjs';
+
+	const root = document.querySelector<HTMLElement>('.archmap');
+	if (root) {
+		const form = root.querySelector<HTMLFormElement>('.capmap-bar')!;
+		const lanesEl = root.querySelector<HTMLElement>('.archmap-lanes')!;
+		const tiles = [...root.querySelectorAll<HTMLAnchorElement>('.archmap-tile')];
+		const byKey = new Map(tiles.map((t) => [t.dataset.key!, t]));
+		const laneEls = [...root.querySelectorAll<HTMLElement>('.archmap-lane')];
+		const shown = root.querySelector<HTMLElement>('[data-shown]')!;
+		const svg = root.querySelector<SVGSVGElement>('.archmap-wires')!;
+		const wires = svg.querySelector<SVGGElement>('[data-wires]')!;
+		const sheet = root.querySelector<HTMLDialogElement>('.capmap-sheet')!;
+		const sheetTitle = sheet.querySelector<HTMLElement>('.capmap-sheet-title')!;
+		const sheetBody = sheet.querySelector<HTMLElement>('.capmap-sheet-body')!;
+		const sheetPage = sheet.querySelector<HTMLAnchorElement>('.capmap-sheet-page')!;
+		const sheetAt = sheet.querySelector<HTMLElement>('.capmap-sheet-at')!;
+		const PLAIN = { lens: LENSES[0].key, q: '', only: '' };
+		const state = { ...PLAIN };
+
+		// the view in the address, so a link shows the map as it was seen
+		const url = new URL(location.href);
+		for (const k of ['lens', 'q', 'only'] as const) {
+			const v = url.searchParams.get(k);
+			if (v) state[k] = v;
+		}
+		if (!LENSES.some((l) => l.key === state.lens)) state.lens = PLAIN.lens;
+		(form.elements.namedItem('q') as HTMLInputElement).value = state.q;
+		const lensInput = form.querySelector<HTMLInputElement>(`input[name="lens"][value="${state.lens}"]`);
+		if (lensInput) lensInput.checked = true;
+
+		const matches = (t: HTMLElement) => {
+			const words = t.dataset.words ?? '';
+			return state.q
+				.toLowerCase()
+				.split(/\s+/)
+				.filter(Boolean)
+				.every((w) => words.includes(w));
+		};
+
+		function apply() {
+			root!.dataset.lens = state.lens;
+			const counts: Record<string, number> = {};
+			let n = 0;
+			for (const t of tiles) {
+				const k = classify(t.dataset, state.lens);
+				t.dataset.cls = k.cls;
+				t.dataset.tone = k.tone;
+				t.querySelector('.capmap-lab')!.textContent = k.label;
+				const hit = matches(t);
+				if (hit) counts[k.cls] = (counts[k.cls] ?? 0) + 1;
+				const lit = hit && (!state.only || state.only === k.cls);
+				t.toggleAttribute('data-dim', !lit);
+				if (lit) n++;
+			}
+			for (const l of laneEls) l.toggleAttribute('data-dim', !l.querySelector('.archmap-tile:not([data-dim])'));
+			shown.textContent = String(n);
+			for (const list of root!.querySelectorAll<HTMLElement>('.capmap-legend ul')) {
+				const mine = list.dataset.for === state.lens;
+				list.hidden = !mine;
+				if (!mine) continue;
+				for (const b of list.querySelectorAll<HTMLButtonElement>('button')) {
+					b.querySelector('[data-count]')!.textContent = String(counts[b.dataset.cls!] ?? 0);
+					b.setAttribute('aria-pressed', String(state.only === b.dataset.cls));
+				}
+			}
+			const next = new URL(location.href);
+			for (const [k, v] of Object.entries(state)) {
+				if (v && v !== PLAIN[k as keyof typeof PLAIN]) next.searchParams.set(k, v);
+				else next.searchParams.delete(k);
+			}
+			next.searchParams.delete('focus');
+			history.replaceState(history.state, '', next);
+		}
+
+		form.addEventListener('input', (e) => {
+			const el = e.target as HTMLInputElement;
+			if (el.name === 'lens' && el.value !== state.lens) state.only = '';
+			if (el.name in state) (state as any)[el.name] = el.value;
+			apply();
+		});
+		form.addEventListener('submit', (e) => e.preventDefault());
+		root.querySelector('.capmap-legend')!.addEventListener('click', (e) => {
+			const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-cls]');
+			if (!b) return;
+			state.only = state.only === b.dataset.cls ? '' : b.dataset.cls!;
+			apply();
+		});
+
+		// ------------------------------------------- a tile's connections, drawn
+		const SVG = 'http://www.w3.org/2000/svg';
+		const keys = (s?: string) => (s ?? '').split(' ').filter(Boolean);
+		let pointed: HTMLAnchorElement | null = null;
+
+		// a curve from one tile's edge to the other's: across when they sit side by side,
+		// up or down when one is above the other
+		function curve(from: DOMRect, to: DOMRect, box: DOMRect) {
+			const fx = from.left + from.width / 2 - box.left;
+			const fy = from.top + from.height / 2 - box.top;
+			const tx = to.left + to.width / 2 - box.left;
+			const ty = to.top + to.height / 2 - box.top;
+			if (Math.abs(ty - fy) > (from.height + to.height) / 2) {
+				const down = ty > fy;
+				const sy = down ? from.bottom - box.top : from.top - box.top;
+				const ey = down ? to.top - box.top : to.bottom - box.top;
+				const bend = Math.max(24, Math.abs(ey - sy) / 2);
+				return `M${fx} ${sy} C${fx} ${sy + (down ? bend : -bend)} ${tx} ${ey + (down ? -bend : bend)} ${tx} ${ey}`;
+			}
+			const right = tx > fx;
+			const sx = right ? from.right - box.left : from.left - box.left;
+			const ex = right ? to.left - box.left : to.right - box.left;
+			const bend = Math.max(24, Math.abs(ex - sx) / 2);
+			return `M${sx} ${fy} C${sx + (right ? bend : -bend)} ${fy} ${ex + (right ? -bend : bend)} ${ty} ${ex} ${ty}`;
+		}
+
+		function point(tile: HTMLAnchorElement | null) {
+			pointed = tile;
+			wires.replaceChildren();
+			for (const t of tiles) {
+				t.removeAttribute('data-source');
+				t.removeAttribute('data-end');
+			}
+			root!.toggleAttribute('data-pointing', !!tile);
+			if (!tile) return;
+			tile.dataset.source = '';
+			const box = lanesEl.getBoundingClientRect();
+			svg.setAttribute('viewBox', `0 0 ${box.width} ${box.height}`);
+			svg.setAttribute('width', String(box.width));
+			svg.setAttribute('height', String(box.height));
+			const from = tile.getBoundingClientRect();
+			const draw = (key: string, way: 'out' | 'in') => {
+				const other = byKey.get(key);
+				if (!other || other === tile) return;
+				other.dataset.end = other.dataset.end === 'out' && way === 'in' ? 'both' : way;
+				const path = document.createElementNS(SVG, 'path');
+				const to = other.getBoundingClientRect();
+				path.setAttribute('d', way === 'out' ? curve(from, to, box) : curve(to, from, box));
+				path.setAttribute('class', way);
+				path.setAttribute('marker-end', `url(#archmap-head-${way})`);
+				wires.append(path);
+			};
+			for (const k of keys(tile.dataset.out)) draw(k, 'out');
+			for (const k of keys(tile.dataset.in)) draw(k, 'in');
+		}
+
+		lanesEl.addEventListener('pointerover', (e) => {
+			const t = (e.target as HTMLElement).closest<HTMLAnchorElement>('.archmap-tile');
+			if (t && t !== pointed) point(t);
+		});
+		lanesEl.addEventListener('pointerleave', () => point(current));
+		lanesEl.addEventListener('focusin', (e) => {
+			const t = (e.target as HTMLElement).closest<HTMLAnchorElement>('.archmap-tile');
+			if (t) point(t);
+		});
+		window.addEventListener('resize', () => point(pointed));
+
+		// ------------------------------------------------ the fact sheet beside the map
+		const pages = new Map<string, Promise<Element | null>>();
+		const fetchSheet = (href: string) => {
+			if (!pages.has(href)) {
+				pages.set(
+					href,
+					fetch(href)
+						.then((r) => (r.ok ? r.text() : Promise.reject(r.status)))
+						.then((html) => new DOMParser().parseFromString(html, 'text/html').querySelector('[data-factsheet]'))
+						.catch(() => null),
+				);
+			}
+			return pages.get(href)!;
+		};
+		let current: HTMLAnchorElement | null = null;
+		const lit = () => tiles.filter((t) => !t.hasAttribute('data-dim'));
+
+		async function open(tile: HTMLAnchorElement) {
+			current = tile;
+			point(tile);
+			sheetTitle.textContent = tile.dataset.key!;
+			sheetPage.href = tile.href;
+			const list = lit();
+			const at = list.indexOf(tile);
+			sheetAt.textContent = at === -1 ? '' : `${at + 1} of ${list.length}`;
+			sheetBody.replaceChildren();
+			sheetBody.setAttribute('aria-busy', 'true');
+			if (!sheet.open) sheet.showModal();
+			history.replaceState(history.state, '', '#' + tile.dataset.key);
+			const el = await fetchSheet(tile.href);
+			if (current !== tile) return;
+			sheetBody.removeAttribute('aria-busy');
+			if (el) {
+				const copy = document.importNode(el, true) as HTMLElement;
+				copy.querySelector('.capsheet-trail')?.remove();
+				sheetBody.replaceChildren(copy);
+			} else {
+				const p = document.createElement('p');
+				p.append('The fact sheet did not load. ', Object.assign(document.createElement('a'), { href: tile.href, textContent: 'Open it as a page.' }));
+				sheetBody.replaceChildren(p);
+			}
+			sheetBody.scrollTop = 0;
+			sheet.scrollTop = 0;
+		}
+
+		function close() {
+			if (sheet.open) sheet.close();
+		}
+		sheet.addEventListener('close', () => {
+			history.replaceState(history.state, '', location.pathname + location.search);
+			const was = current;
+			current = null;
+			point(null);
+			was?.focus();
+		});
+		const step = (by: number) => {
+			if (!current) return;
+			const list = lit();
+			const to = list[(list.indexOf(current) + by + list.length) % list.length];
+			if (to) open(to);
+		};
+		sheet.addEventListener('click', (e) => {
+			if (e.target === sheet) close(); // the backdrop
+			const by = (e.target as HTMLElement).closest<HTMLElement>('[data-step]');
+			if (by) step(Number(by.dataset.step));
+			if ((e.target as HTMLElement).closest('[data-close]')) close();
+		});
+		sheet.addEventListener('keydown', (e) => {
+			if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+			if ((e.target as HTMLElement).closest('input, select, textarea, summary')) return;
+			if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+				e.preventDefault();
+				step(e.key === 'ArrowRight' ? 1 : -1);
+			}
+		});
+
+		lanesEl.addEventListener('click', (e) => {
+			const me = e as MouseEvent;
+			if (me.button !== 0 || me.metaKey || me.ctrlKey || me.shiftKey || me.altKey) return;
+			const tile = (e.target as HTMLElement).closest<HTMLAnchorElement>('.archmap-tile');
+			if (!tile) return;
+			e.preventDefault();
+			open(tile);
+		});
+
+		apply();
+		const focus = url.searchParams.get('focus');
+		const from = location.hash.slice(1);
+		if (from && byKey.get(from)) open(byKey.get(from)!);
+		else if (focus && byKey.get(focus)) {
+			const t = byKey.get(focus)!;
+			t.scrollIntoView({ block: 'center' });
+			t.focus({ preventScroll: true });
+			t.dataset.flash = '';
+		}
+	}
+</script>

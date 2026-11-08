@@ -77,8 +77,9 @@ export default defineConfig({
       },
       plugins: [
         // every docs page is in a section's side navigation (src/nav.mjs); the 404 page is in none,
-        // and a capability's fact sheet (src/pages/spec/capabilities/) is in the capabilities'.
-        starlightSidebarTopics(topics, { exclude: ['/404'], topics: { capabilities: ['/spec/capabilities/**'] } }),
+        // a capability's fact sheet (src/pages/spec/capabilities/) is in the capabilities', and a
+        // component's (src/pages/spec/architecture/) in the architecture's.
+        starlightSidebarTopics(topics, { exclude: ['/404'], topics: { capabilities: ['/spec/capabilities/**'], built: ['/spec/architecture/**'] } }),
         // the product page and the schemas site are outside the docs.
         starlightLinksValidator({ exclude: ['/', '/schemas/**'] }),
       ],

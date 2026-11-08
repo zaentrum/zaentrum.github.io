@@ -1,0 +1,356 @@
+---
+// one component's fact sheet: what it is and runs as, how it reaches the others and how
+// they reach it, the capabilities it serves and the requirements open on them, what it
+// offers in the code, its settings, the decisions that govern it and what the model
+// finds. the page /spec/architecture/<key>/ is this; the architecture map shows the same
+// element beside its tiles, fetched from that page.
+import {
+	load, codeLink, route, byNumber, adrLink, adrName, CONNECTION, COMPONENT_STATUS, SET_WHERE, pageTitle,
+} from '../../lib/capabilities.mjs';
+
+interface Props {
+	comp: any;
+}
+const { comp } = Astro.props;
+const m = load();
+const a = m.architecture;
+const layer = a.layerByKey.get(comp.layer);
+const status = COMPONENT_STATUS[comp.status] ?? { name: comp.status, tone: 'neutral', says: '' };
+const count = (n: number, one: string, many = one + 's') => `${n} ${n === 1 ? one : many}`;
+const GITHUB = 'https://github.com/zaentrum';
+const commit = comp.repo ? (m.sources[comp.repo] ?? 'main') : '';
+const codeUrl = comp.repo ? `${GITHUB}/${comp.repo}${comp.prefix ? `/tree/${commit}/${comp.prefix.replace(/\/$/, '')}` : ''}` : '';
+
+// what a connection rests on in the code: a variable the chart gives a workload, a
+// variable the code reads, a path of the Ingress, a command
+const VIA: Record<string, string> = { wire: "the chart's wiring", env: 'a variable of the code', path: 'a path of the Ingress', command: 'a command' };
+const viaName = (r: any) => (r.kind === 'wire' ? r.name : r.kind === 'path' ? r.name : r.name);
+const other = (key: string) => a.compByKey.get(key);
+const group = (rows: any[], by: (r: any) => string) => {
+	const out = new Map<string, any[]>();
+	for (const r of rows) out.set(by(r), [...(out.get(by(r)) ?? []), r]);
+	return [...out];
+};
+const order = (xs: any[]) => [...xs].sort((x, y) => a.connectionKinds.indexOf(x.kind) - a.connectionKinds.indexOf(y.kind));
+const out = order(comp.out);
+const into = order(comp.in);
+
+const caps = comp.capabilities.map((k: string) => m.capByKey.get(k)).filter(Boolean);
+const byArea = group(caps, (c: any) => c.area).map(([key, rows]) => [m.areaByKey.get(key), rows]);
+const open = comp.open.map((n: string) => m.changeByNumber.get(n)).filter(Boolean);
+const changeLink = (ch: any) => route(ch.file) + (ch.anchor ? '#' + ch.anchor : '');
+const plain = (s: string) => (s ?? '').replace(/`([^`]*)`/g, '$1').replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1');
+
+const OFFERS: [string, string][] = [
+	['screen', 'Screens'],
+	['tab', 'Tabs'],
+	['route', 'HTTP routes'],
+	['graphql', 'GraphQL operations'],
+	['command', 'CLI commands'],
+	['field', "Fields of the operator's resources"],
+];
+const offers = OFFERS.map(([kind, label]) => [label, comp.offers.filter((r: any) => r.kind === kind)] as const).filter(([, rows]) => rows.length);
+
+const settings = comp.settings.map((k: string) => m.settingByKey.get(k)).filter(Boolean);
+const fixed = settings.filter((s: any) => s.where === 'code');
+const decisions = comp.decisions.map((n: string) => a.decisionByNumber.get(n)).filter(Boolean);
+const siblings = a.components.filter((c: any) => c.layer === comp.layer);
+const WORKLOAD_KIND: Record<string, string> = { workload: 'workload', volume: 'volume' };
+---
+
+<div class="capsheet archsheet" data-factsheet data-key={comp.key}>
+	<p class="capsheet-trail not-content">
+		<a href={`/spec/architecture/map/?focus=${comp.key}`}>architecture map</a>
+		<span aria-hidden="true">/</span>
+		<a href={`/spec/architecture/components/#${layer.label.replaceAll("'", '').replaceAll(' ', '-')}`}>{layer.label}</a>
+	</p>
+	<p class="capsheet-meta not-content">
+		<code>{comp.key}</code>
+		<span class="capsheet-chip" data-tone={status.tone}>{status.name}</span>
+		<span>{comp.kind}</span>
+		<span>{layer.label}</span>
+	</p>
+	<p class="archsheet-is">{comp.component[0].toUpperCase() + comp.component.slice(1)}.</p>
+	<p class="capsheet-quiet">{status.says[0].toUpperCase() + status.says.slice(1)}.</p>
+	{comp.note && <p class="capsheet-note">{comp.note}</p>}
+
+	<h2 id="runs">Runs as</h2>
+	{
+		comp.runs.length > 0 ? (
+			<ul class="capsheet-code">
+				{comp.runs.map((r: any) => (
+					<li>
+						<a href={codeLink(m, r)}>
+							<code>{r.name}</code>
+						</a>{' '}
+						<span class="capsheet-quiet">
+							{WORKLOAD_KIND[r.kind] ?? r.kind}: {r.note}
+							{r.value ? ' · ' + r.value : ''}
+						</span>
+					</li>
+				))}
+			</ul>
+		) : (
+			<p>
+				{comp.status === 'ships'
+					? 'Nothing in the chart: people install it.'
+					: comp.kind === 'operator'
+						? 'Installed on its own: it runs what the chart holds.'
+						: 'Nothing the chart runs.'}
+			</p>
+		)
+	}
+	{
+		comp.reached.length > 0 && (
+			<p>
+				Reached at{' '}
+				{comp.reached.map((r: any, i: number) => (
+					<>
+						{i > 0 && ', '}
+						<a href={codeLink(m, r)}>
+							<code>{r.name}</code>
+						</a>
+					</>
+				))}{' '}
+				on the public host.
+			</p>
+		)
+	}
+	{
+		codeUrl && (
+			<p>
+				Its code: <a href={codeUrl}>{comp.code}</a>
+				{comp.repo && m.sources[comp.repo] && <span class="capsheet-quiet"> · listed at {m.sources[comp.repo].slice(0, 7)}</span>}
+			</p>
+		)
+	}
+
+	<h2 id="connections">Connections</h2>
+	{
+		out.length + into.length === 0 ? (
+			<p>It reaches no other component, and none reaches it.</p>
+		) : (
+			<>
+				{[
+					['It reaches', out, 0, (x: any) => x.to],
+					['It is reached by', into, 1, (x: any) => x.from],
+				].map(([title, list, side, end]: any) =>
+					list.length > 0 ? (
+						<>
+							<h3 id={side === 0 ? 'reaches' : 'reached-by'}>{title}</h3>
+							<ul class="archsheet-links">
+								{list.map((x: any) => {
+									const o = other(end(x));
+									const link = (
+										<a href={o.url}>
+											<code>{o.key}</code>
+										</a>
+									);
+									const verb = <span class="archsheet-kind">{CONNECTION[x.kind] ?? x.kind}</span>;
+									return (
+										<li>
+											{side === 0 ? (
+												<>
+													{verb} {link}
+												</>
+											) : (
+												<>
+													{link} {verb} it
+												</>
+											)}
+											{x.on.length > 0 && <span class="capsheet-quiet"> on {x.on.join(', ')}</span>}
+											{x.note && <span class="archsheet-note">{x.note}</span>}
+											{x.via.length > 0 && (
+												<details class="capsheet-ids">
+													<summary>made by {count(x.via.length, 'place', 'places')} in the code</summary>
+													<ul class="capsheet-code">
+														{x.via.map((r: any) => (
+															<li>
+																<a href={codeLink(m, r)}>
+																	<code>{viaName(r)}</code>
+																</a>{' '}
+																<span class="capsheet-quiet">
+																	{VIA[r.kind] ?? r.kind}
+																	{r.kind === 'wire' && r.value ? ' · ' + r.value : ''}
+																	{r.kind === 'env' ? ' · ' + r.repo : ''}
+																</span>
+															</li>
+														))}
+													</ul>
+												</details>
+											)}
+										</li>
+									);
+								})}
+							</ul>
+						</>
+					) : null,
+				)}
+			</>
+		)
+	}
+
+	<h2 id="capabilities">Capabilities</h2>
+	{
+		caps.length > 0 ? (
+			<>
+				<p class="capsheet-lead">
+					{count(caps.length, 'capability', 'capabilities')} with a screen or an interface in its code.
+				</p>
+				<ul class="archsheet-areas">
+					{byArea.map(([area, rows]: any) => (
+						<li>
+							<span class="capsheet-face">{area.area}</span>{' '}
+							{rows.map((c: any, i: number) => (
+								<>
+									{i > 0 && ', '}
+									<a href={c.url}>{c.capability}</a>
+								</>
+							))}
+						</li>
+					))}
+				</ul>
+			</>
+		) : (
+			<p>No capability has a screen or an interface in its code.</p>
+		)
+	}
+
+	<h2 id="requirements">Requirements</h2>
+	{
+		comp.changes.length > 0 ? (
+			<>
+				<p class="capsheet-lead">
+					{count(comp.changes.length, 'numbered change')} of the specification on its capabilities, {open.length} open.
+				</p>
+				{open.length > 0 && (
+					<details class="capsheet-ids">
+						<summary>the {count(open.length, 'open change')}</summary>
+						<ul class="capsheet-code">
+							{open.sort((x: any, y: any) => byNumber(x.number, y.number)).map((ch: any) => (
+								<li>
+									<a class="capsheet-number" href={changeLink(ch)}>
+										{ch.number}
+									</a>{' '}
+									{plain(ch.title)} <span class="capsheet-quiet">{ch.status}</span>
+								</li>
+							))}
+						</ul>
+					</details>
+				)}
+			</>
+		) : (
+			<p>No numbered change of the specification is on its capabilities.</p>
+		)
+	}
+
+	<h2 id="code">In the code</h2>
+	{
+		offers.length > 0 ? (
+			offers.map(([label, rows]) => (
+				<details class="capsheet-ids archsheet-offers">
+					<summary>
+						{label} <b>{rows.length}</b>
+					</summary>
+					<ul class="capsheet-code">
+						{rows.map((r: any) => (
+							<li>
+								<a href={codeLink(m, r)}>
+									<code>{r.name}</code>
+								</a>
+								{r.note && <span class="capsheet-quiet"> {r.note}</span>}
+							</li>
+						))}
+					</ul>
+				</details>
+			))
+		) : (
+			<p>No screen, route, operation, command or field of its own.</p>
+		)
+	}
+
+	<h2 id="settings">Settings</h2>
+	{
+		settings.length > 0 ? (
+			<>
+				<p class="capsheet-lead">
+					{count(settings.length, 'setting')} of the model read in its code{fixed.length > 0 ? `, ${fixed.length} fixed in the code` : ''}.
+				</p>
+				<ul class="capsheet-code archsheet-settings">
+					{settings.map((s: any) => (
+						<li>
+							<span class="capsheet-chip" data-tone={s.where === 'code' ? 'warning' : 'neutral'}>
+								{SET_WHERE[s.where] ?? s.where}
+							</span>{' '}
+							{s.setting} <code>{s.key}</code>
+						</li>
+					))}
+				</ul>
+			</>
+		) : (
+			<p>No setting of the model is read in its code.</p>
+		)
+	}
+
+	<h2 id="decisions">Decisions</h2>
+	{
+		decisions.length > 0 ? (
+			<ul class="archsheet-decisions">
+				{decisions.map((d: any) => (
+					<li>
+						<a href={adrLink(d)}>{adrName(d)}</a> {d.title}{' '}
+						<span class="capsheet-chip" data-tone={d.state === 'Accepted' ? 'success' : 'info'}>
+							{d.state.toLowerCase()}
+						</span>
+						{d.relations.length > 0 && (
+							<span class="capsheet-quiet">
+								{' '}
+								{d.relations.map(([verb, n]: any, i: number) => (
+									<>
+										{i > 0 && '; '}
+										{verb} <a href={adrLink(a.decisionByNumber.get(n) ?? { file: `docs/adr/${n}.md` })}>ADR-{n}</a>
+									</>
+								))}
+							</span>
+						)}
+					</li>
+				))}
+			</ul>
+		) : (
+			<p>No decision record names it.</p>
+		)
+	}
+
+	{
+		comp.findings.length > 0 && (
+			<>
+				<h2 id="findings">Findings</h2>
+				<p class="capsheet-lead">What the model shows its code doing, for the owner to decide; it never fails the check.</p>
+				<ul class="archsheet-findings">
+					{comp.findings.map((f: any) => (
+						<li>
+							<span class="capsheet-chip" data-tone="warning">
+								{f.kind}
+							</span>{' '}
+							{f.what}
+						</li>
+					))}
+				</ul>
+			</>
+		)
+	}
+
+	<h2 id="layer">{layer.label[0].toUpperCase() + layer.label.slice(1)}</h2>
+	<ul class="capsheet-siblings">
+		{
+			siblings.map((c: any) => (
+				<li>
+					<a href={c.url} aria-current={c.key === comp.key ? 'page' : undefined}>
+						{c.key}
+					</a>{' '}
+					<span class="capsheet-quiet">{c.component}</span>
+				</li>
+			))
+		}
+	</ul>
+</div>

@@ -6,7 +6,7 @@
 // tiles, fetched from that page, so there is one fact sheet, not two.
 import {
 	load, STATUS, WHO, SET_WHO, SET_WHERE, PROPOSAL, SCREEN_FACE,
-	route, refLink, partLink, codeLink, changeRow, sectionHtml, inlineHtml, pageTitle,
+	route, refLink, partLink, codeLink, changeRow, sectionHtml, inlineHtml, pageTitle, adrLink, adrName,
 } from '../../lib/capabilities.mjs';
 
 interface Props {
@@ -180,6 +180,21 @@ const count = (n: number, one: string, many = one + 's') => `${n} ${n === 1 ? on
 
 	<h2 id="code">In the code</h2>
 	{
+		cap.builtBy?.length > 0 && (
+			<p>
+				Built by{' '}
+				{cap.builtBy.map((c: any, i: number) => (
+					<>
+						{i > 0 && (i === cap.builtBy.length - 1 ? ' and ' : ', ')}
+						<a href={c.url}>
+							<code>{c.key}</code>
+						</a>
+					</>
+				))}: the components whose code holds its screens and interfaces.
+			</p>
+		)
+	}
+	{
 		screens.length > 0 && (
 			<>
 				<h3 id="screens">Screens</h3>
@@ -289,6 +304,24 @@ const count = (n: number, one: string, many = one + 's') => `${n} ${n === 1 ? on
 			))
 		) : (
 			<p>No setting governs it.</p>
+		)
+	}
+
+	<h2 id="decisions">Decisions</h2>
+	{
+		cap.decisions?.length > 0 ? (
+			<ul class="archsheet-decisions">
+				{cap.decisions.map((d: any) => (
+					<li>
+						<a href={adrLink(d)}>{adrName(d)}</a> {d.title}{' '}
+						<span class="capsheet-chip" data-tone={d.state === 'Accepted' ? 'success' : 'info'}>
+							{d.state.toLowerCase()}
+						</span>
+					</li>
+				))}
+			</ul>
+		) : (
+			<p>No decision record names it.</p>
 		)
 	}
 

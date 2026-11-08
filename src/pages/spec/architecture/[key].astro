@@ -1,0 +1,39 @@
+---
+// /spec/architecture/<key>/: a component's fact sheet, one for each row of
+// zaentrum/zaentrum's spec/architecture/components.csv (see src/lib/capabilities.mjs).
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import ComponentSheet from '../../../components/architecture/ComponentSheet.astro';
+import { load } from '../../../lib/capabilities.mjs';
+import '../../../styles/capabilities.css';
+
+export function getStaticPaths() {
+	const m = load();
+	return (m?.architecture?.components ?? []).map((c: any) => ({ params: { key: c.key }, props: { key: c.key } }));
+}
+
+const m = load();
+const comp = m.architecture.compByKey.get(Astro.props.key);
+const layer = m.architecture.layerByKey.get(comp.layer);
+const headings = [
+	['runs', 'Runs as'],
+	['connections', 'Connections'],
+	['capabilities', 'Capabilities'],
+	['requirements', 'Requirements'],
+	['code', 'In the code'],
+	['settings', 'Settings'],
+	['decisions', 'Decisions'],
+	...(comp.findings.length ? [['findings', 'Findings']] : []),
+	['layer', layer.label[0].toUpperCase() + layer.label.slice(1)],
+].map(([slug, text]) => ({ depth: 2, slug, text }));
+---
+
+<StarlightPage
+	frontmatter={{
+		title: comp.key,
+		description: `${comp.key}, ${comp.component}: what it runs as, its connections, the capabilities it serves, its settings and its decisions.`,
+		editUrl: 'https://github.com/zaentrum/zaentrum/edit/main/spec/architecture/components.csv',
+	}}
+	headings={headings}
+>
+	<ComponentSheet comp={comp} />
+</StarlightPage>

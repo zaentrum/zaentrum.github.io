@@ -6,7 +6,8 @@
 //
 // this file only gives pages their place and their name; the repository decides which
 // pages there are. an entry that is an address (it starts with a /) is a page of the
-// site itself, such as the capability map (src/pages/spec/capabilities/map.astro). a page it doesn't list goes at the end of its folder's section
+// site itself, such as the capability map (src/pages/spec/capabilities/map.astro) or the
+// architecture map (src/pages/spec/architecture/map.astro). a page it doesn't list goes at the end of its folder's section
 // (FOLDERS), under its title, and a folder no section has becomes a section of its
 // own, last in the top bar. a page it lists that the repository no longer has is left
 // out. `npm run build` names both, and neither stops it. a spec/ page is also found
@@ -94,6 +95,17 @@ const SECTIONS = [
     ],
   },
   {
+    id: 'built',
+    label: 'architecture',
+    pages: [
+      ['/spec/architecture/map/', 'the map'],
+      ['spec/architecture/README.md', 'the model'],
+      ['spec/architecture/components.md', 'components'],
+      ['spec/architecture/connections.md', 'connections'],
+      ['spec/architecture/decisions.md', 'decisions'],
+    ],
+  },
+  {
     id: 'chino',
     label: 'chino',
     pages: [
@@ -131,7 +143,7 @@ const SECTIONS = [
 // the folder whose unlisted pages each section takes
 const FOLDERS = {
   run: ['docs'], extend: ['docs/extending'], library: ['docs/library'], architecture: ['docs/adr'],
-  spec: ['spec'], capabilities: ['spec/capabilities'], chino: ['spec/chino', 'docs/chino'], portal: ['spec/portal', 'docs/portal'],
+  spec: ['spec'], capabilities: ['spec/capabilities'], built: ['spec/architecture'], chino: ['spec/chino', 'docs/chino'], portal: ['spec/portal', 'docs/portal'],
 };
 
 const bySource = new Map(pages.map((p) => [p.source, p]));

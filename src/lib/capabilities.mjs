@@ -41,8 +41,68 @@ function index(m) {
     c.fixed = own.filter((s) => s.where === 'code').length;
     c.config = !own.length ? 'none' : c.fixed ? 'fixed' : 'set';
   }
+  if (m.architecture) architecture(m);
   return m;
 }
+
+// the architecture (spec/architecture): each component with its connections both ways,
+// the capabilities it serves and the requirements open on them, its settings and its
+// decisions; each capability with the components that build it and its decisions
+const OPEN = (status) => !['built', 'verified'].includes(status);
+function architecture(m) {
+  const a = m.architecture;
+  a.compByKey = new Map(a.components.map((c) => [c.key, c]));
+  a.layerByKey = new Map(a.layers.map((l) => [l.key, l]));
+  a.decisionByNumber = new Map(a.decisions.map((d) => [d.number, d]));
+  for (const c of a.components) {
+    c.url = `/spec/architecture/${c.key}/`;
+    c.out = a.connections.filter((x) => x.from === c.key);
+    c.in = a.connections.filter((x) => x.to === c.key);
+    c.changes = [...new Set(c.capabilities.flatMap((k) => m.capByKey.get(k)?.changes ?? []))].sort(byNumber);
+    c.open = c.changes.filter((n) => OPEN(m.changeByNumber.get(n)?.status));
+    const own = c.settings.map((k) => m.settingByKey.get(k)).filter(Boolean);
+    c.fixed = own.filter((s) => s.where === 'code').length;
+    c.config = !own.length ? 'none' : c.fixed ? 'fixed' : 'set';
+    c.findings = a.findings.filter((f) => f.about.includes(c.key));
+  }
+  for (const c of m.capabilities) {
+    c.builtBy = (a.builtBy[c.key] ?? []).map((k) => a.compByKey.get(k)).filter(Boolean);
+    c.decisions = (a.capabilityDecisions[c.key] ?? []).map((n) => a.decisionByNumber.get(n)).filter(Boolean);
+  }
+}
+
+// 4.C2 before 4.C10, 11.C1 after 4.C9, H.C1 after them
+export function byNumber(x, y) {
+  const [cx, nx] = x.split('.C');
+  const [cy, ny] = y.split('.C');
+  const ch = (v) => (/^\d+$/.test(v) ? Number(v) : 1000 + v.charCodeAt(0));
+  return ch(cx) - ch(cy) || Number(nx) - Number(ny);
+}
+
+// a decision record's page on the site, and its name
+export const adrLink = (d) => route(d.file);
+export const adrName = (d) => `ADR-${d.number}`;
+
+// what a connection's kind says, as a verb: "chino-api calls katalog-api"
+export const CONNECTION = {
+  calls: 'calls',
+  'signs in': 'signs in at',
+  manages: 'manages',
+  links: 'links to',
+  publishes: 'publishes on',
+  consumes: 'consumes from',
+  writes: 'writes',
+  reads: 'reads',
+};
+export const COMPONENT_STATUS = {
+  runs: { name: 'runs', tone: 'success', says: "the operator's chart runs it" },
+  ships: { name: 'ships', tone: 'info', says: 'published for people to install' },
+  idle: { name: 'idle', tone: 'warning', says: 'built, and nothing runs it yet' },
+  outside: { name: 'outside', tone: 'neutral', says: "not the platform's: the platform calls it" },
+  beside: { name: 'beside', tone: 'neutral', says: 'part of the project, not of the running platform' },
+  later: { name: 'later', tone: 'none', says: "a later product's" },
+  retired: { name: 'retired', tone: 'none', says: 'its repository is archived' },
+};
 
 // several apps or faces as one: built where every one meant to have it has it, no where
 // none has it, not meant where none is meant to have it, partial otherwise.
