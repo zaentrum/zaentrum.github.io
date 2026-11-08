@@ -1,0 +1,35 @@
+---
+// /spec/capabilities/<part>/<key>/: a capability's fact sheet, one for each row of
+// zaentrum/zaentrum's spec/capabilities/capabilities.csv (see src/lib/capabilities.mjs).
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import FactSheet from '../../../../components/capabilities/FactSheet.astro';
+import { load } from '../../../../lib/capabilities.mjs';
+import '../../../../styles/capabilities.css';
+
+export function getStaticPaths() {
+	const m = load();
+	return (m?.capabilities ?? []).map((cap: any) => ({ params: { part: cap.part, key: cap.key }, props: { key: cap.key } }));
+}
+
+const m = load();
+const cap = m.capByKey.get(Astro.props.key);
+const area = m.areaByKey.get(cap.area);
+const headings = [
+	['requirements', 'Requirements'],
+	['specification', 'Specification'],
+	['code', 'In the code'],
+	['configuration', 'Configuration'],
+	['area', area.area],
+].map(([slug, text]) => ({ depth: 2, slug, text }));
+---
+
+<StarlightPage
+	frontmatter={{
+		title: cap.capability,
+		description: `${cap.capability}: where each app has it today, the changes the specification asks of it, the sections that specify it, the code that serves it and its settings.`,
+		editUrl: 'https://github.com/zaentrum/zaentrum/edit/main/spec/capabilities/capabilities.csv',
+	}}
+	headings={headings}
+>
+	<FactSheet cap={cap} />
+</StarlightPage>

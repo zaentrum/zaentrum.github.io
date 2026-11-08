@@ -14,6 +14,7 @@ look.
 | The product page | [`src/pages/index.astro`](src/pages/index.astro), with `public/nalet.css` and `public/site.css` |
 | The sections and the order of their pages | [`src/nav.mjs`](src/nav.mjs) |
 | How a docs page becomes a site page | [`scripts/sync-docs.mjs`](scripts/sync-docs.mjs) |
+| The capability map and a fact sheet for each capability | [`src/pages/spec/capabilities/`](src/pages/spec/capabilities/), [`src/components/capabilities/`](src/components/capabilities/), [`src/lib/capabilities.mjs`](src/lib/capabilities.mjs) |
 | The look: the nalet design system's tokens on [Starlight](https://starlight.astro.build) | [`src/styles/`](src/styles/), [`src/components/`](src/components/) |
 | The old address of the product page, `/zaentrum/`, sent on to `/` | [`astro.config.mjs`](astro.config.mjs) (`redirects`) |
 | Publishing | [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) |
@@ -43,6 +44,28 @@ To build from a working copy instead, name it:
 
 The build fails when a link leads nowhere, including a `#heading` that doesn't
 exist. The live site then stays as it was.
+
+## The capability map
+
+`spec/capabilities/` of zaentrum/zaentrum is a model: CSV files, checked against
+the code by its `scripts/capabilities.py`. The sync has that program write the
+model, resolved, to `src/generated/capabilities.json` (`--json`), so it needs
+`python3`; without it the site is built without the map. From the model the site
+builds:
+
+- `/spec/capabilities/map/`: a lane for each part, a cluster for each area, a tile
+  for each capability, coloured by a lens (built, specified, requirements,
+  settings), filtered by whom it is for and by words. The view is in the address.
+  A tile opens the capability's fact sheet beside the map.
+- `/spec/capabilities/<part>/<key>/`: the fact sheet. Where each app and console
+  has it, its requirements (the specification's numbered changes that name it,
+  with today and the target), the sections that specify it (each one shown
+  folded, as its chapter has it), the screens and interfaces that serve it (each a
+  link to its line on GitHub, at the commit the inventory was listed from), and
+  its settings.
+
+The structure comes from the JSON; the words come from the copied pages, so a
+change's row and a section read as they do on their own pages.
 
 ## When a page is added, moved or removed
 

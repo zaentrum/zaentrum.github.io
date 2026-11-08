@@ -1,0 +1,417 @@
+---
+// /spec/capabilities/map/: the capability model as a map. a lane for each part (chino,
+// the portal, the catalog and the pipeline, the platform), a cluster for each area, a
+// tile for each capability, coloured by a lens: where it is built, whether the
+// specification describes it, the changes asked of it, whether its values can be set.
+// a tile opens the capability's fact sheet beside the map (the same element as its page,
+// /spec/capabilities/<part>/<key>/, fetched from there). the lenses are
+// src/lib/capmap-lenses.mjs, for the page as built and for the browser alike.
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import { load, statusAttr, partLink, refLink, STATUS } from '../../../lib/capabilities.mjs';
+import { FACES, LENSES, classify } from '../../../lib/capmap-lenses.mjs';
+import '../../../styles/capabilities.css';
+
+const m = load();
+const WHO = [
+	['all', 'everyone'],
+	['person', 'person'],
+	['admin', 'admin'],
+	['operator', 'operator'],
+	['addon', 'addon'],
+	['system', 'system'],
+];
+
+// a tile's values, as its data attributes hold them
+function values(c: any) {
+	const d: Record<string, string> = { all: statusAttr(c.all), apps: statusAttr(c.apps) };
+	for (const f of m.faces) d[f.key] = statusAttr(c.status[f.key]);
+	const chapters = c.spec.filter((r: any) => r.kind === 'chapter');
+	d.spec = c.specified;
+	d.labSpec = chapters.length ? chapters[0].label + (c.spec.length > 1 ? ` +${c.spec.length - 1}` : '') : c.spec.length ? 'docs' : 'nowhere';
+	d.changes = String(c.changes.length);
+	d.open = String(c.changes.filter((n: string) => !['built', 'verified'].includes(m.changeByNumber.get(n)?.status)).length);
+	d.config = c.config;
+	d.labConfig = c.fixed ? `${c.fixed} fixed in code` : c.settings.length ? `${c.settings.length} setting${c.settings.length === 1 ? '' : 's'}` : 'no setting';
+	return d;
+}
+const attrs = (d: Record<string, string>) => Object.fromEntries(Object.entries(d).map(([k, v]) => ['data-' + k.replace(/[A-Z]/g, (x) => '-' + x.toLowerCase()), v]));
+const words = (c: any) =>
+	[c.capability, c.key, m.areaByKey.get(c.area).area, ...c.changes, ...c.settings, ...c.screens.map((r: any) => r.name), ...c.served_by.map((r: any) => r.name)]
+		.join(' ')
+		.toLowerCase();
+const meant = (c: any) => m.faces.filter((f: any) => c.status[f.key] !== '—');
+const facesTitle = (c: any) => meant(c).map((f: any) => `${f.label}: ${STATUS[c.status[f.key]].name}`).join(' · ') || 'on no app or face';
+
+const lanes = (m?.parts ?? [])
+	.map((p: any) => ({
+		...p,
+		areas: m.areas
+			.filter((a: any) => a.part === p.key)
+			.map((a: any) => ({ ...a, caps: m.capabilities.filter((c: any) => c.area === a.key).map((c: any) => ({ ...c, d: values(c) })) }))
+			.filter((a: any) => a.caps.length),
+	}))
+	.filter((l: any) => l.areas.length);
+const all = lanes.flatMap((l: any) => l.areas.flatMap((a: any) => a.caps));
+const legendCount = (lens: string, cls: string) => all.filter((c: any) => classify(c.d, lens, 'all').cls === cls).length;
+---
+
+<StarlightPage
+	frontmatter={{
+		title: 'Capability map',
+		description: 'Every capability of the platform, by part and area: where each is built, whether the specification describes it, the changes asked of it and its settings.',
+		tableOfContents: false,
+		editUrl: false,
+	}}
+>
+	{
+		!m ? (
+			<p>The capability model is not in the version of zaentrum/zaentrum this site was built from.</p>
+		) : (
+			<div class="capmap" data-lens="built" data-face="all">
+				<p>
+					Every capability of the platform, by part and area. Colour the tiles by where they are built, whether the
+					specification describes them, the requirements open on them or whether their values can be set; a tile opens
+					its fact sheet: its requirements, its specification, the code that serves it and its settings. As lists:{' '}
+					{lanes.map((l: any, i: number) => (
+						<>
+							{i > 0 && ', '}
+							<a href={partLink(m, l.key)}>{l.label}</a>
+						</>
+					))}
+					; how the model is made: <a href="/spec/capabilities/">the model</a>.
+				</p>
+
+				<form class="capmap-bar not-content" aria-label="the map's view">
+					<fieldset class="capmap-seg">
+						<legend>colour by</legend>
+						<div class="capmap-opts">
+							{LENSES.map((l) => (
+								<label>
+									<input type="radio" name="lens" value={l.key} checked={l.key === 'built'} />
+									<span>{l.label}</span>
+								</label>
+							))}
+						</div>
+					</fieldset>
+					<label class="capmap-face">
+						<span>on</span>
+						<select name="face">
+							{FACES.map(([key, label]) => (
+								<option value={key}>{label}</option>
+							))}
+						</select>
+					</label>
+					<fieldset class="capmap-seg">
+						<legend>for</legend>
+						<div class="capmap-opts">
+							{WHO.map(([key, label]) => (
+								<label>
+									<input type="radio" name="who" value={key} checked={key === 'all'} />
+									<span>{label}</span>
+								</label>
+							))}
+						</div>
+					</fieldset>
+					<label class="capmap-find">
+						<span>find</span>
+						<input type="search" name="q" placeholder="a word, a key, a route, a change" autocomplete="off" />
+					</label>
+				</form>
+
+				<div class="capmap-legend not-content">
+					<p class="capmap-shown" aria-live="polite">
+						<b data-shown>{all.length}</b> of {all.length} capabilities
+					</p>
+					{LENSES.map((l) => (
+						<ul data-for={l.key} hidden={l.key !== 'built'} aria-label={`colours: ${l.label}`}>
+							{l.classes.map(([key, name, tone]) => (
+								<li>
+									<button type="button" data-cls={key} data-tone={tone} aria-pressed="false">
+										<span class="capmap-swatch" aria-hidden="true" />
+										{name} <b data-count>{legendCount(l.key, key)}</b>
+									</button>
+								</li>
+							))}
+						</ul>
+					))}
+				</div>
+
+				<div class="capmap-lanes not-content" data-pagefind-ignore>
+					{lanes.map((lane: any) => (
+						<section class="capmap-lane" aria-labelledby={`lane-${lane.key}`}>
+							<header class="capmap-lane-head">
+								<h2 id={`lane-${lane.key}`}>{lane.label}</h2>
+								<span>
+									{lane.areas.reduce((n: number, a: any) => n + a.caps.length, 0)} capabilities in {lane.areas.length}{' '}
+									{lane.areas.length === 1 ? 'area' : 'areas'}
+								</span>
+								<a class="capmap-aslist" href={partLink(m, lane.key)}>as a list</a>
+							</header>
+							<div class="capmap-clusters">
+								{lane.areas.map((a: any) => (
+									<section class="capmap-cluster" data-area={a.key} aria-labelledby={`area-${a.key}`}>
+										<header>
+											<h3 id={`area-${a.key}`}>
+												<a class="capmap-area" href={partLink(m, lane.key, a.area)}>{a.area}</a>
+											</h3>
+											<span class="capmap-depth" title={`modelled ${a.depth}`}>
+												{a.depth}
+											</span>
+											{a.spec && (
+												<a class="capmap-chapter" href={refLink(a.spec)}>
+													{a.spec.kind === 'docs' ? 'docs' : a.spec.label}
+												</a>
+											)}
+										</header>
+										<ul class="capmap-tiles">
+											{a.caps.map((c: any) => {
+												const k = classify(c.d, 'built', 'all');
+												return (
+													<li>
+														<a
+															class="capmap-tile"
+															href={c.url}
+															id={`tile-${c.key}`}
+															data-key={c.key}
+															data-who={c.who}
+															data-cls={k.cls}
+															data-tone={k.tone}
+															data-words={words(c)}
+															title={facesTitle(c)}
+															{...attrs(c.d)}
+														>
+															<span class="capmap-name">{c.capability}</span>
+															<span class="capmap-foot">
+																<span class="capmap-lab">{k.label}</span>
+																<span class="capmap-dots" data-for="all" aria-hidden="true">
+																	{meant(c).map((f: any) => (
+																		<i data-tone={STATUS[c.status[f.key]].tone} />
+																	))}
+																</span>
+																<span class="capmap-dots" data-for="apps" aria-hidden="true">
+																	{m.apps.map((a: any) => (
+																		<i data-tone={STATUS[c.status[a.key]].tone} />
+																	))}
+																</span>
+															</span>
+														</a>
+													</li>
+												);
+											})}
+										</ul>
+									</section>
+								))}
+							</div>
+						</section>
+					))}
+				</div>
+
+				<dialog class="capmap-sheet" aria-labelledby="capmap-sheet-title">
+					<div class="capmap-sheet-bar not-content">
+						<button type="button" data-step="-1" aria-keyshortcuts="ArrowLeft">previous</button>
+						<button type="button" data-step="1" aria-keyshortcuts="ArrowRight">next</button>
+						<span class="capmap-sheet-at" aria-live="polite" />
+						<a class="capmap-sheet-page" href="#">open as a page</a>
+						<button type="button" data-close>close</button>
+					</div>
+					<h2 id="capmap-sheet-title" class="capmap-sheet-title" />
+					<div class="capmap-sheet-body" />
+				</dialog>
+			</div>
+		)
+	}
+</StarlightPage>
+
+<style is:global>
+	/* the map takes the width there is: no column of text here */
+	:root {
+		--sl-content-width: 100rem;
+	}
+</style>
+
+<script>
+	import { LENSES, classify } from '../../../lib/capmap-lenses.mjs';
+
+	const root = document.querySelector<HTMLElement>('.capmap');
+	if (root) {
+		const form = root.querySelector<HTMLFormElement>('.capmap-bar')!;
+		const tiles = [...root.querySelectorAll<HTMLAnchorElement>('.capmap-tile')];
+		const clusters = [...root.querySelectorAll<HTMLElement>('.capmap-cluster')];
+		const shown = root.querySelector<HTMLElement>('[data-shown]')!;
+		const sheet = root.querySelector<HTMLDialogElement>('.capmap-sheet')!;
+		const sheetTitle = sheet.querySelector<HTMLElement>('.capmap-sheet-title')!;
+		const sheetBody = sheet.querySelector<HTMLElement>('.capmap-sheet-body')!;
+		const sheetPage = sheet.querySelector<HTMLAnchorElement>('.capmap-sheet-page')!;
+		const sheetAt = sheet.querySelector<HTMLElement>('.capmap-sheet-at')!;
+		const PLAIN = { lens: 'built', face: 'all', who: 'all', q: '', only: '' };
+		const state = { ...PLAIN };
+
+		// the view in the address, so a link shows the map as it was seen
+		const url = new URL(location.href);
+		for (const k of ['lens', 'face', 'who', 'q', 'only'] as const) {
+			const v = url.searchParams.get(k);
+			if (v) state[k] = v;
+		}
+		if (!LENSES.some((l) => l.key === state.lens)) state.lens = 'built';
+		(form.elements.namedItem('face') as HTMLSelectElement).value = state.face;
+		(form.elements.namedItem('q') as HTMLInputElement).value = state.q;
+		for (const name of ['lens', 'who']) {
+			const input = form.querySelector<HTMLInputElement>(`input[name="${name}"][value="${state[name as 'lens' | 'who']}"]`);
+			if (input) input.checked = true;
+		}
+
+		const matches = (t: HTMLElement) => {
+			if (state.who !== 'all' && t.dataset.who !== state.who) return false;
+			const words = t.dataset.words ?? '';
+			return state.q
+				.toLowerCase()
+				.split(/\s+/)
+				.filter(Boolean)
+				.every((w) => words.includes(w));
+		};
+
+		function apply() {
+			root!.dataset.lens = state.lens;
+			root!.dataset.face = state.face;
+			const counts: Record<string, number> = {};
+			let n = 0;
+			for (const t of tiles) {
+				const k = classify(t.dataset, state.lens, state.face);
+				t.dataset.cls = k.cls;
+				t.dataset.tone = k.tone;
+				t.querySelector('.capmap-lab')!.textContent = k.label;
+				const hit = matches(t);
+				if (hit) counts[k.cls] = (counts[k.cls] ?? 0) + 1;
+				const lit = hit && (!state.only || state.only === k.cls);
+				t.toggleAttribute('data-dim', !lit);
+				if (lit) n++;
+			}
+			for (const c of clusters) c.toggleAttribute('data-dim', !c.querySelector('.capmap-tile:not([data-dim])'));
+			shown.textContent = String(n);
+			for (const list of root!.querySelectorAll<HTMLElement>('.capmap-legend ul')) {
+				const mine = list.dataset.for === state.lens;
+				list.hidden = !mine;
+				if (!mine) continue;
+				for (const b of list.querySelectorAll<HTMLButtonElement>('button')) {
+					b.querySelector('[data-count]')!.textContent = String(counts[b.dataset.cls!] ?? 0);
+					b.setAttribute('aria-pressed', String(state.only === b.dataset.cls));
+				}
+			}
+			const next = new URL(location.href);
+			for (const [k, v] of Object.entries(state)) {
+				if (v && v !== PLAIN[k as keyof typeof PLAIN]) next.searchParams.set(k, v);
+				else next.searchParams.delete(k);
+			}
+			next.searchParams.delete('focus');
+			history.replaceState(history.state, '', next);
+		}
+
+		form.addEventListener('input', (e) => {
+			const el = e.target as HTMLInputElement;
+			if (el.name === 'lens' && el.value !== state.lens) state.only = '';
+			if (el.name in state) (state as any)[el.name] = el.value;
+			apply();
+		});
+		form.addEventListener('submit', (e) => e.preventDefault());
+		root.querySelector('.capmap-legend')!.addEventListener('click', (e) => {
+			const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-cls]');
+			if (!b) return;
+			state.only = state.only === b.dataset.cls ? '' : b.dataset.cls!;
+			apply();
+		});
+
+		// ------------------------------------------------ the fact sheet beside the map
+		const pages = new Map<string, Promise<Element | null>>();
+		const fetchSheet = (href: string) => {
+			if (!pages.has(href)) {
+				pages.set(
+					href,
+					fetch(href)
+						.then((r) => (r.ok ? r.text() : Promise.reject(r.status)))
+						.then((html) => new DOMParser().parseFromString(html, 'text/html').querySelector('[data-factsheet]'))
+						.catch(() => null),
+				);
+			}
+			return pages.get(href)!;
+		};
+		let current: HTMLAnchorElement | null = null;
+		const lit = () => tiles.filter((t) => !t.hasAttribute('data-dim'));
+
+		async function open(tile: HTMLAnchorElement) {
+			current = tile;
+			sheetTitle.textContent = tile.querySelector('.capmap-name')!.textContent;
+			sheetPage.href = tile.href;
+			const list = lit();
+			const at = list.indexOf(tile);
+			sheetAt.textContent = at === -1 ? '' : `${at + 1} of ${list.length}`;
+			sheetBody.replaceChildren();
+			sheetBody.setAttribute('aria-busy', 'true');
+			if (!sheet.open) sheet.showModal();
+			history.replaceState(history.state, '', '#' + tile.dataset.key);
+			const el = await fetchSheet(tile.href);
+			if (current !== tile) return;
+			sheetBody.removeAttribute('aria-busy');
+			if (el) {
+				const copy = document.importNode(el, true) as HTMLElement;
+				copy.querySelector('.capsheet-trail')?.remove();
+				sheetBody.replaceChildren(copy);
+			} else {
+				const p = document.createElement('p');
+				p.append('The fact sheet did not load. ', Object.assign(document.createElement('a'), { href: tile.href, textContent: 'Open it as a page.' }));
+				sheetBody.replaceChildren(p);
+			}
+			sheetBody.scrollTop = 0;
+			sheet.scrollTop = 0;
+		}
+
+		function close() {
+			if (sheet.open) sheet.close();
+		}
+		sheet.addEventListener('close', () => {
+			history.replaceState(history.state, '', location.pathname + location.search);
+			current?.focus();
+			current = null;
+		});
+		const step = (by: number) => {
+			if (!current) return;
+			const list = lit();
+			const to = list[(list.indexOf(current) + by + list.length) % list.length];
+			if (to) open(to);
+		};
+		sheet.addEventListener('click', (e) => {
+			if (e.target === sheet) close(); // the backdrop
+			const by = (e.target as HTMLElement).closest<HTMLElement>('[data-step]');
+			if (by) step(Number(by.dataset.step));
+			if ((e.target as HTMLElement).closest('[data-close]')) close();
+		});
+		sheet.addEventListener('keydown', (e) => {
+			if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+			if ((e.target as HTMLElement).closest('input, select, textarea, summary')) return;
+			if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+				e.preventDefault();
+				step(e.key === 'ArrowRight' ? 1 : -1);
+			}
+		});
+
+		root.querySelector('.capmap-lanes')!.addEventListener('click', (e) => {
+			const me = e as MouseEvent;
+			if (me.button !== 0 || me.metaKey || me.ctrlKey || me.shiftKey || me.altKey) return;
+			const tile = (e.target as HTMLElement).closest<HTMLAnchorElement>('.capmap-tile');
+			if (!tile) return;
+			e.preventDefault();
+			open(tile);
+		});
+
+		apply();
+		const focus = url.searchParams.get('focus');
+		const from = location.hash.slice(1);
+		const byKey = (key: string | null) => tiles.find((t) => t.dataset.key === key);
+		if (from && byKey(from)) open(byKey(from)!);
+		else if (focus && byKey(focus)) {
+			const t = byKey(focus)!;
+			t.scrollIntoView({ block: 'center' });
+			t.focus({ preventScroll: true });
+			t.dataset.flash = '';
+		}
+	}
+</script>

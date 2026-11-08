@@ -5,7 +5,8 @@
 // sections of the one being read. the names are chrome: lowercase.
 //
 // this file only gives pages their place and their name; the repository decides which
-// pages there are. a page it doesn't list goes at the end of its folder's section
+// pages there are. an entry that is an address (it starts with a /) is a page of the
+// site itself, such as the capability map (src/pages/spec/capabilities/map.astro). a page it doesn't list goes at the end of its folder's section
 // (FOLDERS), under its title, and a folder no section has becomes a section of its
 // own, last in the top bar. a page it lists that the repository no longer has is left
 // out. `npm run build` names both, and neither stops it. a spec/ page is also found
@@ -83,6 +84,7 @@ const SECTIONS = [
     id: 'capabilities',
     label: 'capabilities',
     pages: [
+      ['/spec/capabilities/map/', 'the map'],
       ['spec/capabilities/README.md', 'the model'],
       ['spec/capabilities/chino.md', 'chino'],
       ['spec/capabilities/portal.md', 'the portal'],
@@ -133,10 +135,11 @@ const FOLDERS = {
 };
 
 const bySource = new Map(pages.map((p) => [p.source, p]));
+const isAddress = (path) => path.startsWith('/');
 // where a listed page is: its own path, or for a page in a spec/ folder (spec/chino/…)
 // its place in docs/ before the move
 const before = (path) => (/^spec\/[^/]+\//.test(path) ? path.replace(/^spec\//, 'docs/') : null);
-const where = (path) => (bySource.has(path) ? path : bySource.has(before(path)) ? before(path) : null);
+const where = (path) => (isAddress(path) || bySource.has(path) ? path : bySource.has(before(path)) ? before(path) : null);
 const slug = (route) => route.replace(/^\/|\/$/g, '');
 
 // listed here, gone from the repository
@@ -161,8 +164,8 @@ for (const path of unlisted) {
 }
 
 export const topics = sections.filter((s) => s.pages.length).map((section) => {
-  const items = section.pages.map(([path, label]) => ({ label, slug: slug(bySource.get(path).route) }));
-  return { id: section.id, label: section.label, link: '/' + items[0].slug + '/', items };
+  const items = section.pages.map(([path, label]) => (isAddress(path) ? { label, link: path } : { label, slug: slug(bySource.get(path).route) }));
+  return { id: section.id, label: section.label, link: items[0].link ?? '/' + items[0].slug + '/', items };
 });
 
 // the old address of every spec/ page that has moved out of docs/, for the redirects

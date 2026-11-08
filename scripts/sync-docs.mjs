@@ -146,6 +146,23 @@ mkdirSync(join(ROOT, 'public/docs'), { recursive: true });
 writeFileSync(join(ROOT, 'public/docs/sources.json'), JSON.stringify([source], null, 2) + '\n');
 
 console.log(`${index.length} pages and ${files.filter((f) => IMAGE.test(f)).length} images from ${REPO}@${commit.slice(0, 7)} (${trees.join(', ')})`);
+
+// the capability model, resolved by the repository's own scripts/capabilities.py, for the
+// map and the fact sheets (src/pages/spec/capabilities/, src/lib/capabilities.mjs). a
+// version of the repository whose script can't write it (no --json yet) has no map.
+const MODEL = join(ROOT, 'src/generated/capabilities.json');
+const SCRIPT = join(SOURCE, 'scripts/capabilities.py');
+rmSync(MODEL, { force: true });
+if (existsSync(SCRIPT) && readFileSync(SCRIPT, 'utf8').includes("'--json'")) {
+  try {
+    console.log(execFileSync('python3', [SCRIPT, '--json', MODEL], { encoding: 'utf8' }).trim());
+    const { problems: found = [] } = JSON.parse(readFileSync(MODEL, 'utf8'));
+    if (found.length) console.warn(`the capability model has ${found.length} problems (scripts/capabilities.py --check names them)`);
+  } catch (error) {
+    if (error.code === 'ENOENT') console.warn('no python3 here: the site is built without the capability map');
+    else problems.push(`scripts/capabilities.py --json failed: ${error.message}`);
+  }
+}
 if (problems.length) {
   console.error(problems.join('\n'));
   process.exit(1);

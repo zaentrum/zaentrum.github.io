@@ -1,0 +1,308 @@
+---
+// one capability's fact sheet: where each app and console has it today, the numbered
+// changes the specification asks of it (its requirements), the sections that specify
+// it, what in the code serves it, and the settings that govern it. the page
+// /spec/capabilities/<part>/<key>/ is this; the map shows the same element beside its
+// tiles, fetched from that page, so there is one fact sheet, not two.
+import {
+	load, STATUS, WHO, SET_WHO, SET_WHERE, PROPOSAL, SCREEN_FACE,
+	route, refLink, partLink, codeLink, changeRow, sectionHtml, inlineHtml, pageTitle,
+} from '../../lib/capabilities.mjs';
+
+interface Props {
+	cap: any;
+}
+const { cap } = Astro.props;
+const m = load();
+const area = m.areaByKey.get(cap.area);
+const part = m.partByKey.get(cap.part);
+const plain = (s: string) => (s ?? '').replace(/`([^`]*)`/g, '$1').replace(/\*\*([^*]+)\*\*/g, '$1');
+const listed = (xs: string[]) => (xs.length < 2 ? xs.join('') : xs.slice(0, -1).join(', ') + ' and ' + xs.at(-1));
+
+const faces = m.faces.map((f: any) => ({ ...f, status: cap.status[f.key] }));
+const offered = faces.filter((f: any) => f.status !== '—');
+const notMeant = faces.filter((f: any) => f.status === '—');
+
+const TONE: Record<string, string> = { proposed: 'info', approved: 'success', built: 'success', verified: 'success' };
+const changes = (
+	await Promise.all(
+		cap.changes.map(async (number: string) => {
+			const ch = m.changeByNumber.get(number);
+			if (!ch) return null;
+			const row = changeRow(ch);
+			const cell = (i: number, fallback: string) => inlineHtml(row?.[i] ?? fallback, ch.file);
+			return {
+				...ch,
+				link: route(ch.file) + (ch.anchor ? '#' + ch.anchor : ''),
+				chapter: pageTitle(ch.file),
+				title: await cell(1, ch.title),
+				apps: await cell(2, ch.apps),
+				today: await cell(3, ch.today),
+				target: await cell(4, ch.target),
+			};
+		}),
+	)
+).filter(Boolean);
+
+// a reference's name: its section's heading, or its page (a chapter by its number)
+const refName = (ref: any) =>
+	ref.heading
+		? plain(ref.heading)
+		: ref.label?.startsWith('chapter ')
+			? `${ref.label}, ${pageTitle(ref.file).replace(/^\d+\s+/, '')}`
+			: pageTitle(ref.file);
+const specs = await Promise.all(
+	cap.spec.map(async (ref: any) => ({
+		...ref,
+		link: refLink(ref),
+		html: await sectionHtml(ref),
+		name: refName(ref),
+		where: (ref.kind === 'docs' ? 'docs' : ref.file.split('/')[1]) + (ref.heading ? ' · ' + pageTitle(ref.file) : ''),
+	})),
+);
+const areaSpec = !specs.length && area.spec ? { link: refLink(area.spec), name: refName(area.spec) } : null;
+
+const group = (rows: any[], by: (r: any) => string) => {
+	const out = new Map<string, any[]>();
+	for (const r of rows) out.set(by(r), [...(out.get(by(r)) ?? []), r]);
+	return [...out];
+};
+const faceLabel = (key: string) => m.faces.find((f: any) => f.key === key)?.label ?? key;
+const screens = group(cap.screens, (r) => SCREEN_FACE[r.repo] ?? r.repo).map(([face, rows]) => [faceLabel(face), rows]);
+const served = group(cap.served_by, (r) => r.repo);
+const KIND: Record<string, string> = { route: 'route', graphql: 'GraphQL', command: 'command', field: 'resource field' };
+
+const settings = cap.settings
+	.map((k: string) => m.settingByKey.get(k))
+	.filter(Boolean)
+	.map((s: any) => ({ ...s, others: s.capability.filter((k: string) => k !== cap.key).map((k: string) => m.capByKey.get(k)).filter(Boolean) }));
+
+const siblings = m.capabilities.filter((c: any) => c.area === cap.area);
+const count = (n: number, one: string, many = one + 's') => `${n} ${n === 1 ? one : many}`;
+---
+
+<div class="capsheet" data-factsheet data-key={cap.key}>
+	<p class="capsheet-trail not-content">
+		<a href={`/spec/capabilities/map/?focus=${cap.key}`}>capability map</a>
+		<span aria-hidden="true">/</span>
+		<a href={partLink(m, cap.part)}>{part.label}</a>
+		<span aria-hidden="true">/</span>
+		<a href={partLink(m, cap.part, area.area)}>{area.area}</a>
+	</p>
+	<p class="capsheet-meta not-content">
+		<code>{cap.key}</code>
+		<span>{WHO[cap.who]}</span>
+		<span>its area modelled {area.depth}</span>
+	</p>
+
+	{
+		offered.length > 0 ? (
+			<ul class="capsheet-faces not-content" aria-label="where it is today">
+				{offered.map((f: any) => (
+					<li data-tone={STATUS[f.status].tone}>
+						<span class="capsheet-face">{f.label}</span>
+						<span class="capsheet-status">{STATUS[f.status].name}</span>
+					</li>
+				))}
+			</ul>
+		) : (
+			<p class="capsheet-quiet">No app, console, command or resource offers it.</p>
+		)
+	}
+	{offered.length > 0 && notMeant.length > 0 && <p class="capsheet-quiet">Not meant for {listed(notMeant.map((f: any) => f.label))}.</p>}
+	{cap.note && <p class="capsheet-note">{cap.note}</p>}
+
+	<h2 id="requirements">Requirements</h2>
+	{
+		changes.length > 0 ? (
+			<>
+				<p class="capsheet-lead">
+					{count(changes.length, 'numbered change')} of the specification for it, each decided by its number.
+				</p>
+				{changes.map((ch: any) => (
+					<article class="capsheet-change">
+						<header class="not-content">
+							<a class="capsheet-number" href={ch.link}>{ch.number}</a>
+							<span class="capsheet-chip" data-tone={TONE[ch.status] ?? 'neutral'}>{ch.status}</span>
+							<span class="capsheet-apps" set:html={ch.apps} />
+						</header>
+						<p class="capsheet-change-title" set:html={ch.title} />
+						<dl class="capsheet-pairs">
+							<dt>Today</dt>
+							<dd set:html={ch.today || '—'} />
+							<dt>Target</dt>
+							<dd set:html={ch.target || '—'} />
+						</dl>
+						<p class="capsheet-from">
+							In <a href={ch.link}>{ch.chapter}, {plain(ch.heading)}</a>
+						</p>
+					</article>
+				))}
+			</>
+		) : (
+			<p>{specs.length ? 'The specification asks no change of it.' : "Nothing is asked of it yet: the specification doesn't describe it."}</p>
+		)
+	}
+
+	<h2 id="specification">Specification</h2>
+	{
+		specs.length > 0 ? (
+			specs.map((ref: any) =>
+				ref.html ? (
+					<details class="capsheet-section">
+						<summary>
+							<span class="capsheet-section-name">{ref.name}</span>
+							<span class="capsheet-section-where">{ref.where}</span>
+						</summary>
+						<div class="capsheet-section-body" data-pagefind-ignore set:html={ref.html} />
+						<p class="capsheet-from">
+							<a href={ref.link}>Read it in {ref.where}</a>
+						</p>
+					</details>
+				) : (
+					<p class="capsheet-section-link">
+						<a href={ref.link}>{ref.name}</a> <span class="capsheet-quiet">{ref.where}</span>
+					</p>
+				),
+			)
+		) : (
+			<p>
+				The specification doesn't describe it yet.
+				{areaSpec && (
+					<>
+						{' '}
+						Its area is in <a href={areaSpec.link}>{areaSpec.name}</a>.
+					</>
+				)}
+			</p>
+		)
+	}
+
+	<h2 id="code">In the code</h2>
+	{
+		screens.length > 0 && (
+			<>
+				<h3 id="screens">Screens</h3>
+				<ul class="capsheet-code">
+					{screens.map(([label, rows]: any) => (
+						<li>
+							<span class="capsheet-face">{label}</span>{' '}
+							{rows.map((r: any, i: number) => (
+								<>
+									{i > 0 && ', '}
+									<a href={codeLink(m, r)}>
+										<code>{r.name}</code>
+									</a>
+								</>
+							))}
+						</li>
+					))}
+				</ul>
+			</>
+		)
+	}
+	{
+		served.length > 0 && (
+			<>
+				<h3 id="served-by">Served by</h3>
+				<ul class="capsheet-code">
+					{served.map(([repo, rows]: any) => (
+						<li>
+							<span class="capsheet-face">{repo}</span>
+							<ul>
+								{rows.map((r: any) => (
+									<li>
+										<a href={codeLink(m, r)}>
+											<code>{r.name}</code>
+										</a>{' '}
+										<span class="capsheet-quiet">{KIND[r.kind] ?? r.kind}{r.note ? ': ' + r.note : ''}</span>
+									</li>
+								))}
+							</ul>
+						</li>
+					))}
+				</ul>
+			</>
+		)
+	}
+	{!screens.length && !served.length && <p>No screen and no interface of its own.</p>}
+
+	<h2 id="configuration">Configuration</h2>
+	{
+		settings.length > 0 ? (
+			settings.map((s: any) => (
+				<article class="capsheet-setting">
+					<header class="not-content">
+						<span class="capsheet-setting-name">{s.setting}</span>
+						<code>{s.key}</code>
+						<span class="capsheet-chip" data-tone={s.where === 'code' ? 'warning' : 'neutral'}>
+							{s.kind}
+						</span>
+					</header>
+					<dl class="capsheet-pairs">
+						<dt>Who changes it</dt>
+						<dd>{SET_WHO[s.who] ?? s.who}</dd>
+						<dt>Where</dt>
+						<dd>{SET_WHERE[s.where] ?? s.where}</dd>
+						<dt>Default</dt>
+						<dd>{s.default || '—'}</dd>
+						{s.values && (
+							<>
+								<dt>Values</dt>
+								<dd>{s.values}</dd>
+							</>
+						)}
+						<dt>Proposal</dt>
+						<dd>{s.proposal ? `${s.proposal}: ${PROPOSAL[s.proposal] ?? ''}` : '—'}</dd>
+					</dl>
+					{s.note && <p class="capsheet-quiet">{s.note}</p>}
+					{s.ids.length > 0 && (
+						<details class="capsheet-ids">
+							<summary>{count(s.ids.length, 'place', 'places')} in the code</summary>
+							<ul class="capsheet-code">
+								{s.ids.map((r: any) => (
+									<li>
+										<a href={codeLink(m, r)}>
+											<code>{r.name}</code>
+										</a>{' '}
+										<span class="capsheet-quiet">
+											{r.repo}
+											{r.value ? ' · ' + r.value : ''}
+										</span>
+									</li>
+								))}
+							</ul>
+						</details>
+					)}
+					{s.others.length > 0 && (
+						<p class="capsheet-quiet">
+							Also for{' '}
+							{s.others.map((c: any, i: number) => (
+								<>
+									{i > 0 && ', '}
+									<a href={c.url}>{c.capability}</a>
+								</>
+							))}
+						</p>
+					)}
+				</article>
+			))
+		) : (
+			<p>No setting governs it.</p>
+		)
+	}
+
+	<h2 id="area">{area.area}</h2>
+	<p class="capsheet-quiet">{area.intro}</p>
+	<ul class="capsheet-siblings">
+		{
+			siblings.map((c: any) => (
+				<li>
+					<a href={c.url} aria-current={c.key === cap.key ? 'page' : undefined}>
+						{c.capability}
+					</a>
+				</li>
+			))
+		}
+	</ul>
+</div>
