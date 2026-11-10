@@ -30,6 +30,10 @@ function index(m) {
   m.capByKey = new Map(m.capabilities.map((c) => [c.key, c]));
   m.settingByKey = new Map(m.settings.map((s) => [s.key, s]));
   m.changeByNumber = new Map(m.changes.map((ch) => [ch.number, ch]));
+  // what people expect of a media server; a model from before the expectations has none
+  m.expectations ??= [];
+  m.expectationByKey = new Map(m.expectations.map((e) => [e.key, e]));
+  m.expectationGroup = new Map((m.expectationGroups ?? []).map((g) => [g.key, g.label]));
   m.apps = m.faces.filter((f) => f.app);
   for (const c of m.capabilities) {
     c.part = m.areaByKey.get(c.area).part;
@@ -98,6 +102,7 @@ export const COMPONENT_STATUS = {
   runs: { name: 'runs', tone: 'success', says: "the operator's chart runs it" },
   ships: { name: 'ships', tone: 'info', says: 'published for people to install' },
   idle: { name: 'idle', tone: 'warning', says: 'built, and nothing runs it yet' },
+  missing: { name: 'missing', tone: 'error', says: 'not built: named because an expectation looks for it' },
   outside: { name: 'outside', tone: 'neutral', says: "not the platform's: the platform calls it" },
   demo: { name: 'demo', tone: 'neutral', says: 'in the chart for the reference demo only, behind an option a plain install leaves off' },
   beside: { name: 'beside', tone: 'neutral', says: 'part of the project, not of the running platform' },

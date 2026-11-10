@@ -10,6 +10,7 @@ export const LENSES = [
       ['runs', 'runs', 'success'],
       ['ships', 'ships', 'info'],
       ['idle', 'idle', 'warning'],
+      ['missing', 'missing', 'error'],
       ['outside', 'outside', 'neutral'],
       ['demo', 'the demo\'s', 'neutral'],
       ['beside', 'beside', 'neutral'],
@@ -68,11 +69,11 @@ export const LENSES = [
     key: 'found',
     label: 'findings',
     classes: [
-      ['found', 'a finding', 'warning'],
+      ['found', 'a finding or a limit', 'warning'],
       ['none', 'none', 'neutral'],
     ],
     of: (d) => (+d.found ? 'found' : 'none'),
-    lab: (d) => (+d.found ? `${d.found} ${+d.found === 1 ? 'finding' : 'findings'}` : 'no finding'),
+    lab: (d) => (+d.found ? `${d.found} ${+d.found === 1 ? 'finding or limit' : 'findings and limits'}` : 'no finding'),
   },
 ];
 

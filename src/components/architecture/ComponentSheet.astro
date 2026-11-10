@@ -325,11 +325,14 @@ const WORKLOAD_KIND: Record<string, string> = { workload: 'workload', volume: 'v
 		comp.findings.length > 0 && (
 			<>
 				<h2 id="findings">Findings</h2>
-				<p class="capsheet-lead">What the model shows its code doing, for the owner to decide; it never fails the check.</p>
+				<p class="capsheet-lead">
+					What the model shows its code doing, and the limits it has as it is built, for the owner to decide; neither
+					fails the check.
+				</p>
 				<ul class="archsheet-findings">
 					{comp.findings.map((f: any) => (
 						<li>
-							<span class="capsheet-chip" data-tone="warning">
+							<span class="capsheet-chip" data-tone={f.kind === 'limit' ? 'error' : 'warning'}>
 								{f.kind}
 							</span>{' '}
 							{f.what}

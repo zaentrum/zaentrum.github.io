@@ -87,6 +87,7 @@ const SECTIONS = [
     pages: [
       ['/spec/capabilities/map/', 'the map'],
       ['spec/capabilities/README.md', 'the model'],
+      ['spec/capabilities/expectations.md', 'expectations'],
       ['spec/capabilities/chino.md', 'chino'],
       ['spec/capabilities/portal.md', 'the portal'],
       ['spec/capabilities/catalog.md', 'the catalog and the pipeline'],

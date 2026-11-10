@@ -62,6 +62,19 @@ export const LENSES = [
     of: (d) => d.config,
     lab: (d) => d.labConfig,
   },
+  {
+    // what people expect of a media server (spec/capabilities/expectations.csv): a
+    // capability nothing serves is in the model because an expectation or a change names it
+    key: 'expected',
+    label: 'expected',
+    classes: [
+      ['absent', 'nothing serves it yet', 'error'],
+      ['named', 'an expectation names it', 'info'],
+      ['none', 'no expectation names it', 'neutral'],
+    ],
+    of: (d) => d.expected,
+    lab: (d) => d.labExpected,
+  },
 ];
 
 export const lensByKey = Object.fromEntries(LENSES.map((l) => [l.key, l]));

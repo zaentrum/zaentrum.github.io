@@ -2,7 +2,8 @@
 // /spec/capabilities/map/: the capability model as a map. a lane for each part (chino,
 // the portal, the catalog and the pipeline, the platform), a cluster for each area, a
 // tile for each capability, coloured by a lens: where it is built, whether the
-// specification describes it, the changes asked of it, whether its values can be set.
+// specification describes it, the changes asked of it, whether its values can be set,
+// whether an expectation names it and nothing serves it yet.
 // a tile opens the capability's fact sheet beside the map (the same element as its page,
 // /spec/capabilities/<part>/<key>/, fetched from there). the lenses are
 // src/lib/capmap-lenses.mjs, for the page as built and for the browser alike.
@@ -31,6 +32,9 @@ function values(c: any) {
 	d.changes = String(c.changes.length);
 	d.open = String(c.changes.filter((n: string) => !['built', 'verified'].includes(m.changeByNumber.get(n)?.status)).length);
 	d.config = c.config;
+	const named = (c.expected ?? []).length;
+	d.expected = c.absent ? 'absent' : named ? 'named' : 'none';
+	d.labExpected = c.absent ? 'nothing serves it' : named ? `${named} expectation${named === 1 ? '' : 's'}` : 'no expectation';
 	d.labConfig = c.fixed ? `${c.fixed} fixed in code` : c.settings.length ? `${c.settings.length} setting${c.settings.length === 1 ? '' : 's'}` : 'no setting';
 	return d;
 }
@@ -70,7 +74,8 @@ const legendCount = (lens: string, cls: string) => all.filter((c: any) => classi
 			<div class="capmap" data-lens="built" data-face="all">
 				<p>
 					Every capability of the platform, by part and area. Colour the tiles by where they are built, whether the
-					specification describes them, the requirements open on them or whether their values can be set; a tile opens
+					specification describes them, the requirements open on them, whether their values can be set, or what is{' '}
+					<a href="/spec/capabilities/expectations/">expected</a> of a media server and served by nothing yet; a tile opens
 					its fact sheet: its requirements, its specification, the code that serves it and its settings. As lists:{' '}
 					{lanes.map((l: any, i: number) => (
 						<>

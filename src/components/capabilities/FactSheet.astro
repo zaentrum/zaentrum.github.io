@@ -6,7 +6,7 @@
 // tiles, fetched from that page, so there is one fact sheet, not two.
 import {
 	load, STATUS, WHO, SET_WHO, SET_WHERE, PROPOSAL, SCREEN_FACE,
-	route, refLink, partLink, codeLink, changeRow, sectionHtml, inlineHtml, pageTitle, adrLink, adrName,
+	route, refLink, partLink, codeLink, changeRow, sectionHtml, inlineHtml, pageTitle, adrLink, adrName, slug,
 } from '../../lib/capabilities.mjs';
 
 interface Props {
@@ -78,6 +78,9 @@ const settings = cap.settings
 	.map((s: any) => ({ ...s, others: s.capability.filter((k: string) => k !== cap.key).map((k: string) => m.capByKey.get(k)).filter(Boolean) }));
 
 const siblings = m.capabilities.filter((c: any) => c.area === cap.area);
+// the expectations that name it (spec/capabilities/expectations.csv), each at its group on their page
+const expected = (cap.expected ?? []).map((k: string) => m.expectationByKey.get(k)).filter(Boolean);
+const expectedLink = (e: any) => `/spec/capabilities/expectations/#${slug(m.expectationGroup.get(e.group) ?? '')}`;
 const count = (n: number, one: string, many = one + 's') => `${n} ${n === 1 ? one : many}`;
 ---
 
@@ -111,6 +114,25 @@ const count = (n: number, one: string, many = one + 's') => `${n} ${n === 1 ? on
 	}
 	{offered.length > 0 && notMeant.length > 0 && <p class="capsheet-quiet">Not meant for {listed(notMeant.map((f: any) => f.label))}.</p>}
 	{cap.note && <p class="capsheet-note">{cap.note}</p>}
+	{
+		(cap.absent || expected.length > 0) && (
+			<p class="capsheet-quiet">
+				{cap.absent && 'Nothing serves it yet. '}
+				{expected.length > 0 && (
+					<>
+						Expected of a media server:{' '}
+						{expected.map((e: any, i: number) => (
+							<>
+								{i > 0 && '; '}
+								<a href={expectedLink(e)}>{e.expectation}</a>
+							</>
+						))}
+						.
+					</>
+				)}
+			</p>
+		)
+	}
 
 	<h2 id="requirements">Requirements</h2>
 	{
