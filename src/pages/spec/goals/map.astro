@@ -1,0 +1,448 @@
+---
+// /spec/goals/map/: what zaentrum is for, as a map. a band for each kind of goal (what
+// people want, what that takes, what being open adds), a card for each goal, and in it a
+// tile for each group of capabilities (an area of the capability model) that is for it,
+// coloured by a lens: how much of it is built, whether it holds what nothing serves, how
+// deep it is specified. pointing at a goal draws the goals it needs and the goals that
+// need it. the lenses are src/lib/goalmap-lenses.mjs, for the page as built and for the
+// browser alike.
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import { load, slug } from '../../../lib/capabilities.mjs';
+import { LENSES, classify } from '../../../lib/goalmap-lenses.mjs';
+import '../../../styles/capabilities.css';
+
+const m = load();
+const goals: any[] = m?.goals ?? [];
+const first = LENSES[0].key;
+
+const count = (n: number, one: string, many = one + 's') => `${n} ${n === 1 ? one : many}`;
+// a capability's state, and an expectation's, each with the tone the other maps give it
+const STATES = [
+	['built', 'built', 'success'],
+	['partial', 'partly', 'warning'],
+	['no', 'not there', 'error'],
+	['?', 'not checked', 'info'],
+];
+const EXPECTED = [
+	['there', 'success'],
+	['partly', 'warning'],
+	['not there', 'error'],
+	['not checked', 'info'],
+	['decided otherwise', 'neutral'],
+];
+const capsOf = (a: any) => m.capabilities.filter((c: any) => c.area === a.key);
+const parts = (caps: any[]) => STATES.map(([s, name, tone]) => ({ name, tone, n: caps.filter((c) => c.state === s).length })).filter((x) => x.n);
+const expected = (g: any) => EXPECTED.map(([s, tone]) => ({ name: s, tone, n: g.expectations.filter((e: any) => e.state === s).length })).filter((x) => x.n);
+const said = (xs: { name: string; n: number }[]) => xs.map((x) => `${x.n} ${x.name}`).join(', ');
+
+// a group's values, as its tile's data attributes hold them
+function values(a: any) {
+	const caps = capsOf(a);
+	const n = caps.length;
+	const by = (s: string) => caps.filter((c: any) => c.state === s).length;
+	const built = by('built');
+	const partial = by('partial');
+	const missing = by('no');
+	const absent = caps.filter((c: any) => c.absent).length;
+	return {
+		built: !n ? 'no' : built === n ? 'built' : by('?') === n ? 'unknown' : !(built + partial) ? 'no' : missing ? 'gaps' : 'there',
+		labBuilt: `${built} of ${n} built`,
+		made: [built && `${built} built`, partial && `${partial} partly`, missing && `${missing} not there`, by('?') && `${by('?')} not checked`]
+			.filter(Boolean)
+			.join(', '),
+		gaps: absent ? 'absent' : 'none',
+		labGaps: absent ? `${absent} served by nothing` : 'all of it served',
+		depth: a.depth,
+		labDepth: a.spec ? (a.spec.kind === 'docs' ? 'in the docs' : a.spec.label) : a.depth === 'stub' ? 'a stub' : 'no chapter yet',
+	};
+}
+const attrs = (d: Record<string, string>) => Object.fromEntries(Object.entries(d).map(([k, v]) => ['data-' + k.replace(/[A-Z]/g, (x) => '-' + x.toLowerCase()), v]));
+const words = (g: any, a: any) => [g.goal, a.area, a.key, ...capsOf(a).flatMap((c: any) => [c.capability, c.key])].join(' ').toLowerCase();
+
+// what every goal of a band needs is said once, on the band; a card says only what it
+// needs beyond that
+const bands = (m?.goalKinds ?? [])
+	.map((k: any) => {
+		const own = goals.filter((g) => g.kind === k.key);
+		const shared = own.length > 1 ? (own[0]?.needs ?? []).filter((n: string) => own.every((g) => g.needs.includes(n))) : [];
+		return {
+			...k,
+			shared,
+			goals: own.map((g) => ({
+				...g,
+				own: g.needs.filter((n: string) => !shared.includes(n)),
+				tiles: g.areaList.map((a: any) => ({ ...a, d: values(a), caps: capsOf(a) })),
+			})),
+		};
+	})
+	.filter((b: any) => b.goals.length);
+const all = bands.flatMap((b: any) => b.goals.flatMap((g: any) => g.tiles));
+const legendCount = (lens: string, cls: string) => all.filter((a: any) => classify(a.d, lens).cls === cls).length;
+---
+
+<StarlightPage
+	frontmatter={{
+		title: 'Goal map',
+		description: 'What zaentrum is for, as a map: every goal, the goals it needs, and the groups of capabilities that are for it.',
+		tableOfContents: false,
+		editUrl: false,
+	}}
+>
+	{
+		!goals.length ? (
+			<p>The goals are not in the version of zaentrum/zaentrum this site was built from.</p>
+		) : (
+			<div class="capmap goalmap" data-lens={first}>
+				<p>
+					What zaentrum is for, from the top: what people want of it, what that takes, and what being open adds. Each card is
+					a goal; each tile in it is a group of capabilities that is there for that goal. Point at a goal to see the goals it
+					needs and the goals that need it. Colour the groups by how much of them is built, whether they hold a capability
+					nothing serves yet, or how deep they are specified; a group opens on the{' '}
+					<a href="/spec/capabilities/map/">capability map</a>. In words: <a href="/spec/goals/">what it is for</a>; what is
+					expected of each goal: <a href="/spec/capabilities/expectations/">expectations</a>.
+				</p>
+
+				<form class="capmap-bar not-content" aria-label="the map's view">
+					<fieldset class="capmap-seg">
+						<legend>colour by</legend>
+						<div class="capmap-opts">
+							{LENSES.map((l) => (
+								<label>
+									<input type="radio" name="lens" value={l.key} checked={l.key === first} />
+									<span>{l.label}</span>
+								</label>
+							))}
+						</div>
+					</fieldset>
+					<label class="capmap-find">
+						<span>find</span>
+						<input type="search" name="q" placeholder="a group, a capability, a key" autocomplete="off" />
+					</label>
+				</form>
+
+				<div class="capmap-legend not-content">
+					<p class="capmap-shown" aria-live="polite">
+						<b data-shown>{all.length}</b> of {all.length} groups, for {count(goals.length, 'goal')}
+					</p>
+					{LENSES.map((l) => (
+						<ul data-for={l.key} hidden={l.key !== first} aria-label={`colours: ${l.label}`}>
+							{l.classes.map(([key, name, tone]) => (
+								<li>
+									<button type="button" data-cls={key} data-tone={tone} aria-pressed="false">
+										<span class="capmap-swatch" aria-hidden="true" />
+										{name} <b data-count>{legendCount(l.key, key)}</b>
+									</button>
+								</li>
+							))}
+						</ul>
+					))}
+				</div>
+
+				<div class="goalmap-bands archmap-lanes not-content" data-pagefind-ignore>
+					<svg class="archmap-wires" aria-hidden="true">
+						<defs>
+							<marker id="archmap-head-out" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+								<path d="M0 0 L10 5 L0 10 z" />
+							</marker>
+							<marker id="archmap-head-in" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+								<path d="M0 0 L10 5 L0 10 z" />
+							</marker>
+						</defs>
+						<g data-wires />
+					</svg>
+					{bands.map((band: any) => (
+						<section class="capmap-lane goalmap-band" aria-labelledby={`band-${band.key}`}>
+							<header class="capmap-lane-head">
+								<h2 id={`band-${band.key}`}>{band.label}</h2>
+								<span>
+									{count(band.goals.length, 'goal')}, {count(band.goals.reduce((n: number, g: any) => n + g.caps.length, 0), 'capability', 'capabilities')}
+								</span>
+								{band.shared.length > 0 && (
+									<p class="goalmap-needs goalmap-shared">
+										<span>each of them needs</span>
+										{band.shared.map((k: string) => (
+											<a href={`#goal-${k}`}>{m.goalByKey.get(k)?.goal ?? k}</a>
+										))}
+									</p>
+								)}
+							</header>
+							<div class="goalmap-goals">
+								{band.goals.map((g: any) => {
+									const exp = expected(g);
+									const built = parts(g.caps);
+									const absent = g.caps.filter((c: any) => c.absent).length;
+									const targets = g.qualities.filter((q: any) => q.target).length;
+									return (
+										<section
+											class="capmap-cluster goalmap-goal"
+											id={`goal-${g.key}`}
+											data-key={g.key}
+											data-needs={g.needs.join(' ')}
+											data-needed={g.neededBy.join(' ')}
+											data-wide={g.tiles.length > 6 ? '' : undefined}
+											aria-labelledby={`goal-name-${g.key}`}
+										>
+											<header>
+												<h3 id={`goal-name-${g.key}`}>
+													<a class="capmap-area" href={g.url}>
+														{g.goal}
+													</a>
+												</h3>
+												<span class="capmap-depth">{count(g.tiles.length, 'group')}</span>
+											</header>
+											<p class="goalmap-why">{g.why}</p>
+											{g.own.length > 0 && (
+												<p class="goalmap-needs">
+													<span>needs</span>
+													{g.own.map((k: string) => (
+														<a href={`#goal-${k}`}>{m.goalByKey.get(k)?.goal ?? k}</a>
+													))}
+												</p>
+											)}
+											<dl class="goalmap-stats">
+												<div>
+													<dt>
+														{exp.length ? <a href={`/spec/capabilities/expectations/#${slug(g.goal)}`}>expected of it</a> : 'expected of it'}
+													</dt>
+													<dd>
+														{g.expectations.length > 1 && (
+															<span class="goalmap-bar" aria-hidden="true">
+																{exp.map((x) => (
+																	<i data-tone={x.tone} style={`--n:${x.n}`} />
+																))}
+															</span>
+														)}
+														{exp.length ? `${g.expectations.length}: ${said(exp)}` : 'nothing listed yet'}
+													</dd>
+												</div>
+												<div>
+													<dt>capabilities</dt>
+													<dd>
+														{g.caps.length > 1 && (
+															<span class="goalmap-bar" aria-hidden="true">
+																{built.map((x) => (
+																	<i data-tone={x.tone} style={`--n:${x.n}`} />
+																))}
+															</span>
+														)}
+														{g.caps.length ? `${g.caps.length}: ${said(built)}` + (absent ? `; nothing serves ${absent}` : '') : 'none yet'}
+													</dd>
+												</div>
+												<div>
+													<dt>
+														<a href={g.url}>qualities</a>
+													</dt>
+													<dd>{g.qualities.length ? `${g.qualities.length}, ${targets ? targets : 'none'} with a target` : 'none stated yet'}</dd>
+												</div>
+											</dl>
+											{g.tiles.length > 0 ? (
+												<ul class="capmap-tiles goalmap-tiles">
+													{g.tiles.map((a: any) => {
+														const k = classify(a.d, first);
+														return (
+															<li>
+																<a
+																	class="capmap-tile goalmap-tile"
+																	href={`/spec/capabilities/map/#area-${a.key}`}
+																	data-key={a.key}
+																	data-cls={k.cls}
+																	data-tone={k.tone}
+																	data-words={words(g, a)}
+																	title={`${a.area}: ${a.d.made}. ${a.intro}`}
+																	{...attrs(a.d)}
+																>
+																	<span class="capmap-name">{a.area}</span>
+																	<span class="goalmap-bar" aria-hidden="true">
+																		{parts(a.caps).map((x) => (
+																			<i data-tone={x.tone} style={`--n:${x.n}`} />
+																		))}
+																	</span>
+																	<span class="capmap-foot">
+																		<span class="capmap-lab">{k.label}</span>
+																	</span>
+																</a>
+															</li>
+														);
+													})}
+												</ul>
+											) : (
+												<p class="goalmap-empty">No group of capabilities is for it yet.</p>
+											)}
+										</section>
+									);
+								})}
+							</div>
+						</section>
+					))}
+				</div>
+			</div>
+		)
+	}
+</StarlightPage>
+
+<style is:global>
+	/* the map takes the width there is: no column of text here */
+	:root {
+		--sl-content-width: 100rem;
+	}
+</style>
+
+<script>
+	import { LENSES, classify } from '../../../lib/goalmap-lenses.mjs';
+
+	const root = document.querySelector<HTMLElement>('.goalmap');
+	if (root) {
+		const form = root.querySelector<HTMLFormElement>('.capmap-bar')!;
+		const bandsEl = root.querySelector<HTMLElement>('.goalmap-bands')!;
+		const tiles = [...root.querySelectorAll<HTMLAnchorElement>('.goalmap-tile')];
+		const cards = [...root.querySelectorAll<HTMLElement>('.goalmap-goal')];
+		const byKey = new Map(cards.map((c) => [c.dataset.key!, c]));
+		const shown = root.querySelector<HTMLElement>('[data-shown]')!;
+		const svg = root.querySelector<SVGSVGElement>('.archmap-wires')!;
+		const wires = svg.querySelector<SVGGElement>('[data-wires]')!;
+		const PLAIN = { lens: LENSES[0].key, q: '', only: '' };
+		const state = { ...PLAIN };
+
+		// the view in the address, so a link shows the map as it was seen
+		const url = new URL(location.href);
+		for (const k of ['lens', 'q', 'only'] as const) {
+			const v = url.searchParams.get(k);
+			if (v) state[k] = v;
+		}
+		if (!LENSES.some((l) => l.key === state.lens)) state.lens = PLAIN.lens;
+		(form.elements.namedItem('q') as HTMLInputElement).value = state.q;
+		const lensInput = form.querySelector<HTMLInputElement>(`input[name="lens"][value="${state.lens}"]`);
+		if (lensInput) lensInput.checked = true;
+
+		const matches = (t: HTMLElement) => {
+			const words = t.dataset.words ?? '';
+			return state.q
+				.toLowerCase()
+				.split(/\s+/)
+				.filter(Boolean)
+				.every((w) => words.includes(w));
+		};
+
+		function apply() {
+			root!.dataset.lens = state.lens;
+			const counts: Record<string, number> = {};
+			let n = 0;
+			for (const t of tiles) {
+				const k = classify(t.dataset, state.lens);
+				t.dataset.cls = k.cls;
+				t.dataset.tone = k.tone;
+				t.querySelector('.capmap-lab')!.textContent = k.label;
+				const hit = matches(t);
+				if (hit) counts[k.cls] = (counts[k.cls] ?? 0) + 1;
+				const lit = hit && (!state.only || state.only === k.cls);
+				t.toggleAttribute('data-dim', !lit);
+				if (lit) n++;
+			}
+			// a goal with groups, none of them lit, steps back; one without groups stays
+			const narrowed = !!(state.q || state.only);
+			for (const c of cards) {
+				const has = c.querySelector('.goalmap-tile');
+				c.toggleAttribute('data-dim', narrowed && (!has || !c.querySelector('.goalmap-tile:not([data-dim])')));
+			}
+			shown.textContent = String(n);
+			for (const list of root!.querySelectorAll<HTMLElement>('.capmap-legend ul')) {
+				const mine = list.dataset.for === state.lens;
+				list.hidden = !mine;
+				if (!mine) continue;
+				for (const b of list.querySelectorAll<HTMLButtonElement>('button')) {
+					b.querySelector('[data-count]')!.textContent = String(counts[b.dataset.cls!] ?? 0);
+					b.setAttribute('aria-pressed', String(state.only === b.dataset.cls));
+				}
+			}
+			const next = new URL(location.href);
+			for (const [k, v] of Object.entries(state)) {
+				if (v && v !== PLAIN[k as keyof typeof PLAIN]) next.searchParams.set(k, v);
+				else next.searchParams.delete(k);
+			}
+			history.replaceState(history.state, '', next);
+		}
+
+		form.addEventListener('input', (e) => {
+			const el = e.target as HTMLInputElement;
+			if (el.name === 'lens' && el.value !== state.lens) state.only = '';
+			if (el.name in state) (state as any)[el.name] = el.value;
+			apply();
+		});
+		form.addEventListener('submit', (e) => e.preventDefault());
+		root.querySelector('.capmap-legend')!.addEventListener('click', (e) => {
+			const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-cls]');
+			if (!b) return;
+			state.only = state.only === b.dataset.cls ? '' : b.dataset.cls!;
+			apply();
+		});
+
+		// ------------------------------------- what a goal needs, and what needs it, drawn
+		const SVG = 'http://www.w3.org/2000/svg';
+		const keys = (s?: string) => (s ?? '').split(' ').filter(Boolean);
+		let pointed: HTMLElement | null = null;
+
+		// a curve from one card's edge to the other's: down or up when one is above the
+		// other, across when they sit side by side
+		function curve(from: DOMRect, to: DOMRect, box: DOMRect) {
+			const fx = from.left + from.width / 2 - box.left;
+			const fy = from.top + from.height / 2 - box.top;
+			const tx = to.left + to.width / 2 - box.left;
+			const ty = to.top + to.height / 2 - box.top;
+			if (to.top >= from.bottom || from.top >= to.bottom) {
+				const down = ty > fy;
+				const sy = down ? from.bottom - box.top : from.top - box.top;
+				const ey = down ? to.top - box.top : to.bottom - box.top;
+				const bend = Math.max(18, Math.abs(ey - sy) / 2);
+				return `M${fx} ${sy} C${fx} ${sy + (down ? bend : -bend)} ${tx} ${ey + (down ? -bend : bend)} ${tx} ${ey}`;
+			}
+			const right = tx > fx;
+			const sx = right ? from.right - box.left : from.left - box.left;
+			const ex = right ? to.left - box.left : to.right - box.left;
+			const bend = Math.max(18, Math.abs(ex - sx) / 2);
+			return `M${sx} ${fy} C${sx + (right ? bend : -bend)} ${fy} ${ex + (right ? -bend : bend)} ${ty} ${ex} ${ty}`;
+		}
+
+		function point(card: HTMLElement | null) {
+			pointed = card;
+			wires.replaceChildren();
+			for (const c of cards) {
+				c.removeAttribute('data-source');
+				c.removeAttribute('data-end');
+			}
+			root!.toggleAttribute('data-pointing', !!card);
+			if (!card) return;
+			card.dataset.source = '';
+			const box = bandsEl.getBoundingClientRect();
+			svg.setAttribute('viewBox', `0 0 ${box.width} ${box.height}`);
+			svg.setAttribute('width', String(box.width));
+			svg.setAttribute('height', String(box.height));
+			const from = card.getBoundingClientRect();
+			const draw = (key: string, way: 'out' | 'in') => {
+				const other = byKey.get(key);
+				if (!other || other === card) return;
+				other.dataset.end = way;
+				const path = document.createElementNS(SVG, 'path');
+				const to = other.getBoundingClientRect();
+				path.setAttribute('d', way === 'out' ? curve(from, to, box) : curve(to, from, box));
+				path.setAttribute('class', way);
+				path.setAttribute('marker-end', `url(#archmap-head-${way})`);
+				wires.append(path);
+			};
+			for (const k of keys(card.dataset.needs)) draw(k, 'out');
+			for (const k of keys(card.dataset.needed)) draw(k, 'in');
+		}
+
+		bandsEl.addEventListener('pointerover', (e) => {
+			const c = (e.target as HTMLElement).closest<HTMLElement>('.goalmap-goal');
+			if (c && c !== pointed) point(c);
+		});
+		bandsEl.addEventListener('pointerleave', () => point(null));
+		bandsEl.addEventListener('focusin', (e) => {
+			const c = (e.target as HTMLElement).closest<HTMLElement>('.goalmap-goal');
+			if (c) point(c);
+		});
+		window.addEventListener('resize', () => point(pointed));
+
+		apply();
+	}
+</script>

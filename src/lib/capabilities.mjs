@@ -46,7 +46,28 @@ function index(m) {
     c.config = !own.length ? 'none' : c.fixed ? 'fixed' : 'set';
   }
   if (m.architecture) architecture(m);
+  goals(m);
   return m;
+}
+
+// what zaentrum is for (spec/goals): each goal with the goals it needs and that need it,
+// the groups of capabilities (areas) that are for it, what is expected of it and its
+// qualities. a capability's state is one word over every app and face meant to have it
+// (scripts/capabilities.py writes it); a model from before it has only the faces.
+function goals(m) {
+  m.goals ??= [];
+  m.qualities ??= [];
+  m.goalByKey = new Map(m.goals.map((g) => [g.key, g]));
+  m.goalKindLabel = new Map((m.goalKinds ?? []).map((k) => [k.key, k.label]));
+  for (const c of m.capabilities) c.state ??= c.all === '—' ? (c.served_by.length ? 'built' : 'no') : c.all;
+  for (const g of m.goals) {
+    g.url = `/spec/goals/#${slug(g.goal)}`;
+    g.neededBy = m.goals.filter((o) => o.needs.includes(g.key)).map((o) => o.key);
+    g.areaList = g.areas.map((k) => m.areaByKey.get(k)).filter(Boolean);
+    g.caps = m.capabilities.filter((c) => g.areas.includes(c.area));
+    g.expectations = m.expectations.filter((e) => e.group === g.key);
+    g.qualities = m.qualities.filter((q) => q.goal === g.key);
+  }
 }
 
 // the architecture (spec/architecture): each component with its connections both ways,

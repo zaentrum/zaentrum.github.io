@@ -86,7 +86,10 @@ const SECTIONS = [
     // the capabilities and the architecture follow from it
     id: 'goals',
     label: 'goals',
-    pages: [['spec/goals/README.md', 'what it is for']],
+    pages: [
+      ['/spec/goals/map/', 'the map'],
+      ['spec/goals/README.md', 'what it is for'],
+    ],
   },
   {
     id: 'capabilities',

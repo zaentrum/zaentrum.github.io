@@ -828,3 +828,162 @@
     outline: 2px solid var(--cloud-blue);
   }
 }
+
+/* ---- the goal map: a band a kind of goal, a card a goal, a tile a group of capabilities ---- */
+
+.goalmap-bands {
+  position: relative;
+}
+
+.goalmap .capmap-lane {
+  margin-top: var(--s-5);
+}
+
+.goalmap-goals {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: var(--s-4);
+}
+
+/* a goal: the capability map's cluster, as a card that grows with its row; one with
+ * many groups takes a row of its own */
+.goalmap-goal {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 17rem;
+  margin: 0;
+  scroll-margin-top: 5rem;
+  transition:
+    opacity 120ms,
+    border-color 120ms;
+}
+
+.goalmap-goal[data-wide] {
+  flex-basis: 100%;
+}
+
+.goalmap-goal h3 {
+  font-size: 15px;
+}
+
+.goalmap-why {
+  max-width: 72ch;
+  margin: 0 0 var(--s-2);
+  color: var(--fg-muted);
+  font: 400 12.5px/1.45 var(--ff-ui);
+}
+
+.goalmap-needs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 6px;
+  margin: 0 0 var(--s-3);
+  font: 500 11px/1.3 var(--ff-mono);
+}
+
+.goalmap-needs span {
+  color: var(--fg-dim);
+}
+
+.goalmap-needs a {
+  padding: 2px 6px;
+  border: 1px solid var(--border-2);
+  color: var(--cloud-blue);
+  text-decoration: none;
+}
+
+.goalmap-needs a:hover {
+  border-color: var(--cloud-blue);
+}
+
+.goalmap-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: var(--s-2) var(--s-4);
+  margin: 0 0 var(--s-3);
+}
+
+.goalmap-stats div {
+  min-width: 0;
+}
+
+.goalmap-stats dt {
+  margin: 0 0 3px;
+  color: var(--fg-dim);
+  font: 500 11px/1.3 var(--ff-mono);
+}
+
+.goalmap-stats dt a {
+  color: var(--cloud-blue);
+}
+
+.goalmap-stats dd {
+  margin: 0;
+  color: var(--fg-2);
+  font: 400 12px/1.4 var(--ff-ui);
+}
+
+/* how a count is made up: a stripe a state, as wide as its share */
+.goalmap-bar {
+  display: flex;
+  gap: 1px;
+  height: 5px;
+  margin: 0 0 4px;
+}
+
+.goalmap-bar i {
+  flex: var(--n, 1) 1 0;
+  min-width: 3px;
+  background: var(--tone-mark);
+}
+
+.goalmap-tiles {
+  grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+}
+
+.goalmap-tile {
+  gap: 5px;
+  min-height: 4.6rem;
+}
+
+.goalmap-tile .capmap-name {
+  font-weight: 500;
+}
+
+.goalmap-tile .goalmap-bar {
+  margin: auto 0 0;
+}
+
+.goalmap-empty {
+  margin: 0;
+  padding: var(--s-2) var(--s-3);
+  border: 1px dashed var(--border-2);
+  color: var(--fg-dim);
+  font: 400 12.5px/1.4 var(--ff-ui);
+}
+
+/* pointing at a goal: it and the goals at the other end of its arrows stay, the rest
+ * step back */
+.goalmap[data-pointing] .goalmap-goal:not([data-source]):not([data-end]) {
+  opacity: 0.5;
+}
+
+.goalmap-goal[data-source],
+.goalmap-goal[data-end='out'] {
+  border-color: var(--cloud-blue);
+}
+
+.goalmap-goal[data-end='in'] {
+  border-color: var(--fg-muted);
+}
+
+.goalmap-goal[data-dim] {
+  opacity: 0.45;
+}
+
+/* what every goal of a band needs, said once beside the band's name */
+.goalmap-shared {
+  margin: 0 0 0 auto;
+}
