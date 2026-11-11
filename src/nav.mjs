@@ -82,6 +82,13 @@ const SECTIONS = [
     pages: [['spec/README.md', 'the specification']],
   },
   {
+    // what zaentrum is for: the goals, what each needs and how well it has to be met;
+    // the capabilities and the architecture follow from it
+    id: 'goals',
+    label: 'goals',
+    pages: [['spec/goals/README.md', 'what it is for']],
+  },
+  {
     id: 'capabilities',
     label: 'capabilities',
     pages: [
@@ -144,7 +151,7 @@ const SECTIONS = [
 // the folder whose unlisted pages each section takes
 const FOLDERS = {
   run: ['docs'], extend: ['docs/extending'], library: ['docs/library'], architecture: ['docs/adr'],
-  spec: ['spec'], capabilities: ['spec/capabilities'], built: ['spec/architecture'], chino: ['spec/chino', 'docs/chino'], portal: ['spec/portal', 'docs/portal'],
+  spec: ['spec'], goals: ['spec/goals'], capabilities: ['spec/capabilities'], built: ['spec/architecture'], chino: ['spec/chino', 'docs/chino'], portal: ['spec/portal', 'docs/portal'],
 };
 
 const bySource = new Map(pages.map((p) => [p.source, p]));
