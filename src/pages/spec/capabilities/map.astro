@@ -22,6 +22,7 @@ const WHO = [
 	['system', 'system'],
 ];
 
+const NEXT: Record<string, string> = { build: 'to write', later: 'later', addon: "an addon's", out: 'ruled out' };
 // a tile's values, as its data attributes hold them
 function values(c: any) {
 	const d: Record<string, string> = { all: statusAttr(c.all), apps: statusAttr(c.apps) };
@@ -36,6 +37,9 @@ function values(c: any) {
 	d.expected = c.absent ? 'absent' : named ? 'named' : 'none';
 	d.labExpected = c.absent ? 'nothing serves it' : named ? `${named} expectation${named === 1 ? '' : 's'}` : 'no expectation';
 	d.labConfig = c.fixed ? `${c.fixed} fixed in code` : c.settings.length ? `${c.settings.length} setting${c.settings.length === 1 ? '' : 's'}` : 'no setting';
+	// what becomes of it; a model without scope.csv says nothing, and every tile is then built or undecided
+	d.next = c.becomes ?? (c.state === 'built' ? 'built' : 'undecided');
+	d.labNext = { built: 'built', change: 'build' + (c.scope ? ', the rest ' + NEXT[c.scope.scope] : ''), build: 'change to write', later: 'later', addon: "an addon's", out: 'ruled out', undecided: 'nothing says' }[d.next] ?? d.next;
 	return d;
 }
 const attrs = (d: Record<string, string>) => Object.fromEntries(Object.entries(d).map(([k, v]) => ['data-' + k.replace(/[A-Z]/g, (x) => '-' + x.toLowerCase()), v]));
@@ -74,8 +78,9 @@ const legendCount = (lens: string, cls: string) => all.filter((c: any) => classi
 			<div class="capmap" data-lens="built" data-face="all">
 				<p>
 					Every capability of the platform, by part and area. Colour the tiles by where they are built, whether the
-					specification describes them, the requirements open on them, whether their values can be set, or what is{' '}
-					<a href="/spec/capabilities/expectations/">expected</a> of a media server and served by nothing yet; a tile opens
+					specification describes them, the requirements open on them, whether their values can be set, what is{' '}
+					<a href="/spec/capabilities/expectations/">expected</a> of a media server and served by nothing yet, or what
+					comes <a href="/spec/capabilities/scope/">next</a> for what is not built; a tile opens
 					its fact sheet: its requirements, its specification, the code that serves it and its settings. As lists:{' '}
 					{lanes.map((l: any, i: number) => (
 						<>

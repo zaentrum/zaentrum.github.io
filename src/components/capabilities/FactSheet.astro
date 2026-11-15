@@ -115,6 +115,22 @@ const count = (n: number, one: string, many = one + 's') => `${n} ${n === 1 ? on
 	{offered.length > 0 && notMeant.length > 0 && <p class="capsheet-quiet">Not meant for {listed(notMeant.map((f: any) => f.label))}.</p>}
 	{cap.note && <p class="capsheet-note">{cap.note}</p>}
 	{
+		cap.becomes && cap.becomes !== 'built' && (
+			<p class="capsheet-quiet">
+				<a href="/spec/capabilities/scope/">Next</a>:{' '}
+				{cap.becomes === 'change' && 'the numbered changes below build it'}
+				{cap.becomes === 'build' && 'to be built; its numbered change is still to write'}
+				{cap.becomes === 'later' && 'left for later'}
+				{cap.becomes === 'addon' && 'left to an addon'}
+				{cap.becomes === 'out' && 'ruled out'}
+				{cap.becomes === 'undecided' && 'nothing says yet'}
+				{cap.scope && cap.becomes === 'change' && `; the rest is ${{ later: 'left for later', addon: 'left to an addon', out: 'ruled out', build: 'still to write' }[cap.scope.scope as string] ?? cap.scope.scope}`}
+				{cap.scope && cap.becomes !== 'build' && `: ${cap.scope.why}`}
+				{cap.scope && ` (${cap.scope.status})`}.
+			</p>
+		)
+	}
+	{
 		(cap.absent || expected.length > 0) && (
 			<p class="capsheet-quiet">
 				{cap.absent && 'Nothing serves it yet. '}

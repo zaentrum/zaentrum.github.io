@@ -98,6 +98,8 @@ const SECTIONS = [
       ['/spec/capabilities/map/', 'the map'],
       ['spec/capabilities/README.md', 'the model'],
       ['spec/capabilities/expectations.md', 'expectations'],
+      ['spec/capabilities/scope.md', 'scope'],
+      ['spec/capabilities/packages.md', 'work packages'],
       ['spec/capabilities/chino.md', 'chino'],
       ['spec/capabilities/portal.md', 'the portal'],
       ['spec/capabilities/catalog.md', 'the catalog and the pipeline'],
@@ -147,6 +149,27 @@ const SECTIONS = [
       ['spec/portal/README.md', 'overview'],
       ['spec/portal/home.md', 'home page'],
       ['spec/portal/settings.md', 'settings and setup'],
+      ['spec/portal/people.md', 'people and what they may do'],
+      ['spec/portal/operations.md', 'running the platform'],
+    ],
+  },
+  {
+    id: 'catalog',
+    label: 'catalog',
+    pages: [
+      ['spec/catalog/README.md', 'overview'],
+      ['spec/catalog/library.md', 'the library'],
+      ['spec/catalog/console.md', 'the catalog console'],
+    ],
+  },
+  {
+    id: 'platform',
+    label: 'platform',
+    pages: [
+      ['spec/platform/README.md', 'overview'],
+      ['spec/platform/home.md', 'reaching it at home'],
+      ['spec/platform/install.md', 'installing and updating'],
+      ['spec/platform/trust.md', 'releases one can trust'],
     ],
   },
 ];
@@ -155,6 +178,7 @@ const SECTIONS = [
 const FOLDERS = {
   run: ['docs'], extend: ['docs/extending'], library: ['docs/library'], architecture: ['docs/adr'],
   spec: ['spec'], goals: ['spec/goals'], capabilities: ['spec/capabilities'], built: ['spec/architecture'], chino: ['spec/chino', 'docs/chino'], portal: ['spec/portal', 'docs/portal'],
+  catalog: ['spec/catalog'], platform: ['spec/platform'],
 };
 
 const bySource = new Map(pages.map((p) => [p.source, p]));

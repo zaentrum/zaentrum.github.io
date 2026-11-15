@@ -75,6 +75,23 @@ export const LENSES = [
     of: (d) => d.expected,
     lab: (d) => d.labExpected,
   },
+  {
+    // what becomes of a capability that is not built (spec/capabilities/scope.csv): a
+    // numbered change builds it, or it is left out, with the reason on its fact sheet
+    key: 'next',
+    label: 'next',
+    classes: [
+      ['built', 'built', 'neutral'],
+      ['change', 'a numbered change builds it', 'success'],
+      ['build', 'to be built, the change still to write', 'error'],
+      ['later', 'left for later', 'info'],
+      ['addon', 'left to an addon', 'info-strong'],
+      ['out', 'ruled out', 'warning'],
+      ['undecided', 'nothing says', 'error'],
+    ],
+    of: (d) => d.next,
+    lab: (d) => d.labNext,
+  },
 ];
 
 export const lensByKey = Object.fromEntries(LENSES.map((l) => [l.key, l]));
