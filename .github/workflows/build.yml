@@ -1,0 +1,33 @@
+name: build
+
+# A pull request builds the site as deploy.yml builds it on main, from the
+# docs and the specification on zaentrum/zaentrum's main, and publishes
+# nothing.
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+        with:
+          repository: zaentrum/zaentrum
+          path: .sources/zaentrum
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Build
+        env:
+          ASTRO_TELEMETRY_DISABLED: 1
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
